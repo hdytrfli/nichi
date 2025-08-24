@@ -1,6 +1,6 @@
 # Video File Organizer with AI Translation
 
-A powerful video file organizer with Google Gemini AI-powered translation capabilities for SRT subtitle files. This tool helps you organize your video files and translate subtitle files to any supported language with high-quality AI translation.
+A simple TUI video file organizer with Google Gemini AI-powered translation capabilities for SRT subtitle files. This tool helps you organize your video files and translate subtitle files to any supported language with AI translation.
 
 ## Features
 

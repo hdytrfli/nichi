@@ -24,20 +24,25 @@ A powerful video file organizer with Google Gemini AI-powered translation capabi
 
 ```
 .
-├── README.md
-├── requirements.txt
-├── setup.py
-├── .env
-├── .env.example
-└── src/
-   ├── **init**.py
-   ├── main.py
-   └── nichi/
-      ├── **init**.py
-      ├── converter.py     # VTT to SRT conversion
-      ├── organizer.py     # File organization
-      ├── translator.py    # AI translation engine
-      └── tui.py           # Terminal user interface
+|-- readme.md
+|-- requirements.txt
+|-- setup.py
+`-- src
+    |-- __init__.py
+    |-- main.py
+    `-- nichi
+        |-- __init__.py
+        |-- converter.py
+        |-- env_loader.py
+        |-- gemini_translator.py
+        |-- jellyfin_parser.py
+        |-- operations.py
+        |-- organizer.py
+        |-- srt_parser.py
+        |-- translator.py
+        |-- tui.py
+        |-- ui_components.py
+        `-- user_input.py
 ```
 
 ## Installation

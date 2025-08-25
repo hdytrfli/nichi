@@ -11,6 +11,7 @@ from typing import List, Callable, Optional, Tuple
 import google.generativeai as genai
 from google.api_core.exceptions import (
     ResourceExhausted,
+    GoogleAPICallError,
     PermissionDenied,
     NotFound,
     InternalServerError,

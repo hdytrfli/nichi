@@ -15,6 +15,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from nichi.converter import VTTToSRTConverter
 from nichi.organizer import FileOrganizer
 from nichi.translator import SRTTranslator
+from nichi.timing_adjuster import SRTTimingAdjuster
 from .ui_components import UIComponents
 from .user_input import UserInput
 from .operations import Operations
@@ -31,12 +32,17 @@ class ExtendedVideoOrganizerTUI:
         self.converter = VTTToSRTConverter()
         self.organizer = FileOrganizer()
         self.translator = SRTTranslator()
+        self.timing_adjuster = SRTTimingAdjuster()
 
         # Initialize UI components
         self.ui = UIComponents(self.console)
         self.input_handler = UserInput(self.console)
         self.operations = Operations(
-            self.converter, self.organizer, self.translator, self.console
+            self.converter,
+            self.organizer,
+            self.translator,
+            self.timing_adjuster,
+            self.console,
         )
 
     def clear_screen(self):
@@ -61,6 +67,8 @@ class ExtendedVideoOrganizerTUI:
             self.operations.translate_single_file(self.working_directory)
         elif choice == "7":
             self.operations.show_available_languages()
+        elif choice == "8":
+            self.operations.adjust_subtitle_timing(self.working_directory)
 
     def run(self):
         """Main application loop"""
@@ -71,7 +79,7 @@ class ExtendedVideoOrganizerTUI:
 
             choice = self.input_handler.get_menu_choice()
 
-            if choice == "8":
+            if choice == "9":
                 if self.input_handler.confirm_exit():
                     self.console.print(
                         Panel(
@@ -85,5 +93,5 @@ class ExtendedVideoOrganizerTUI:
             self.clear_screen()
             self.handle_menu_choice(choice)
 
-            if choice != "8":
+            if choice != "9":
                 self.input_handler.wait_for_continue()

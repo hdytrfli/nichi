@@ -122,7 +122,7 @@ class Operations:
                     )
 
             try:
-                total_entries, translated_entries, output_filename, result_info = (
+                total_entries, translated_entries, output_filename = (
                     self.translator.translate_file(
                         input_path,
                         target_lang,
@@ -137,7 +137,6 @@ class Operations:
                 self.console.print(Panel(f"Translation failed: {error}", style="red"))
                 return
 
-        # Show results
         result_table = self.ui.show_translation_results(
             selected_file,
             output_filename,
@@ -147,20 +146,7 @@ class Operations:
             source_lang,
         )
         self.console.print(result_table)
-
-        # Show error details if any
-        if not result_info.get("success", True) and result_info.get("errors"):
-            error_panel = Panel(
-                f"Translation completed with warnings:\n"
-                + "\n".join(result_info["errors"][:3]),
-                style="yellow",
-                title="Warnings",
-            )
-            self.console.print(error_panel)
-        else:
-            self.console.print(
-                Panel("Translation completed successfully!", style="green")
-            )
+        self.console.print(Panel("Translation completed successfully!", style="green"))
 
     def adjust_subtitle_timing(self, working_directory: str):
         """Handle subtitle timing adjustment with backup to .og file"""

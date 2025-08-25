@@ -3,10 +3,12 @@ Google Gemini translation service
 High-performance translator for SRT subtitles with concurrent processing
 """
 
-import os
 import re
 import asyncio
 import random
+import hashlib
+import json
+from pathlib import Path
 from typing import List, Callable, Optional, Tuple
 import google.generativeai as genai
 from google.api_core.exceptions import (
@@ -73,16 +75,132 @@ class GeminiTranslator:
             EnvLoader.get_config_value("MAX_CONCURRENT_REQUESTS", "5")
         )
 
+        self.cache_dir = Path.home() / ".config" / "nichi" / "cache"
+        self.cache_dir.mkdir(exist_ok=True)
+
     def get_language_name(self, code: str) -> str:
         """Get full language name from code"""
         return self.LANGUAGES.get(code.lower(), code)
 
+    def _get_cache_key(
+        self, texts: List[str], target_language: str, source_language: str = None
+    ) -> str:
+        """Generate cache key hash from translation parameters"""
+        cache_data = {
+            "texts": texts,
+            "target_language": target_language,
+            "source_language": source_language,
+        }
+        cache_string = json.dumps(cache_data, sort_keys=True)
+        return hashlib.sha256(cache_string.encode()).hexdigest()
+
+    def _get_cached_translation(self, cache_key: str) -> Optional[List[str]]:
+        """Retrieve cached translation if available"""
+        cache_file = self.cache_dir / f"{cache_key}.json"
+        if cache_file.exists():
+            try:
+                with open(cache_file, "r", encoding="utf-8") as f:
+                    cached_data = json.load(f)
+                    return cached_data.get("translations")
+            except (json.JSONDecodeError, IOError):
+                # Remove corrupted cache file
+                cache_file.unlink(missing_ok=True)
+        return None
+
+    def _save_cached_translation(self, cache_key: str, translations: List[str]) -> None:
+        """Save translation to cache"""
+        cache_file = self.cache_dir / f"{cache_key}.json"
+        try:
+            cache_data = {
+                "translations": translations,
+                "timestamp": asyncio.get_event_loop().time(),
+            }
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        except IOError:
+            pass  # Silently fail if cache write fails
+
+    def _get_cached_response(self, cache_key: str) -> Optional[str]:
+        """Retrieve cached raw Gemini response if available"""
+        cache_file = self.cache_dir / f"{cache_key}.json"
+        if cache_file.exists():
+            try:
+                with open(cache_file, "r", encoding="utf-8") as f:
+                    cached_data = json.load(f)
+                    return cached_data.get("raw_response")
+            except (json.JSONDecodeError, IOError):
+                # Remove corrupted cache file
+                cache_file.unlink(missing_ok=True)
+        return None
+
+    def _save_cached_response(self, cache_key: str, raw_response: str) -> None:
+        """Save raw Gemini response to cache"""
+        cache_file = self.cache_dir / f"{cache_key}.json"
+        try:
+            cache_data = {
+                "raw_response": raw_response,
+                "timestamp": asyncio.get_event_loop().time(),
+            }
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        except IOError:
+            pass  # Silently fail if cache write fails
+
+    def _parse_gemini_response(
+        self, raw_response: str, original_texts: List[str]
+    ) -> List[str]:
+        """Parse raw Gemini response into translations with simplified logic"""
+        if not raw_response:
+            return original_texts
+
+        translations = []
+        lines = raw_response.strip().split("\n")
+        current_translation = ""
+        expected_number = 1
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            # Check if line starts with expected number
+            number_match = re.match(rf"^{expected_number}\.\s*(.*)", line)
+            if number_match:
+                # Save previous translation if we have one
+                if current_translation and len(translations) == expected_number - 2:
+                    translations.append(current_translation.strip())
+
+                # Start new translation
+                current_translation = number_match.group(1)
+                expected_number += 1
+            else:
+                # Continuation of current translation (preserve line breaks)
+                if current_translation:
+                    current_translation += "\n" + line
+
+        # Don't forget the last translation
+        if current_translation:
+            translations.append(current_translation.strip())
+
+        # Ensure we have exactly the same number of translations as input
+        while len(translations) < len(original_texts):
+            translations.append(original_texts[len(translations)])
+
+        return translations[: len(original_texts)]
+
     async def translate_batch(
         self, texts: List[str], target_language: str, source_language: str = None
     ) -> List[str]:
-        """Translate a batch of texts using optimized parsing"""
+        """Translate a batch of texts using simplified and reliable parsing"""
         if not texts:
             return []
+
+        cache_key = self._get_cache_key(texts, target_language, source_language)
+        cached_response = self._get_cached_response(cache_key)
+
+        if cached_response:
+            # Parse cached response
+            return self._parse_gemini_response(cached_response, texts)
 
         source_lang_str = (
             self.get_language_name(source_language)
@@ -107,8 +225,11 @@ class GeminiTranslator:
         2. Keep non-dialogue cues like [music] or (laughs) unchanged
         3. Translate idioms to natural equivalents, not literally
         4. Use proper gender-specific terms when needed
-        5. For multi-line subtitles, preserve line breaks
+        5. For multi-line subtitles, *PRESERVE LINE BREAKS WITH \\n*, THIS IS VERY IMPORTANT!
         6. Return ONLY the numbered translations, no explanations
+        7. Each numbered item (1., 2., 3., etc.) represents ONE subtitle timing - DO NOT SPLIT THEM
+        8. Use language specific conventions for translation style
+        9. CRITICAL: Maintain the exact numbering sequence 1., 2., 3., etc.
 
         Text to translate:
         {batch_text}
@@ -119,65 +240,11 @@ class GeminiTranslator:
         if not response or not response.text:
             return texts  # Return original if no response
 
-        # Enhanced parsing logic from the old code
-        translated_content = response.text.strip()
-        translations = []
-        lines = translated_content.split("\n")
-        current_translation = ""
-        current_number = 1
+        raw_response = response.text.strip()
 
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
+        self._save_cached_response(cache_key, raw_response)
 
-            # Check if this line starts with the expected number
-            number_match = re.match(rf"^{current_number}\.\s*(.*)", line)
-            if number_match:
-                # If we have a previous translation, save it
-                if current_translation and len(translations) == current_number - 2:
-                    translations.append(current_translation.strip())
-
-                # Start new translation
-                current_translation = number_match.group(1)
-                current_number += 1
-            else:
-                # This is a continuation of the current translation
-                if current_translation:
-                    current_translation += "\n" + line
-                else:
-                    # Orphaned line - treat as standalone translation
-                    current_translation = line
-
-        # Don't forget the last translation
-        if current_translation:
-            translations.append(current_translation.strip())
-
-        # Fallback parsing if the above didn't work well
-        if len(translations) != len(texts):
-            translation_lines = [
-                line for line in translated_content.split("\n") if line.strip()
-            ]
-            translations = []
-
-            for i, original_text in enumerate(texts):
-                if i < len(translation_lines):
-                    # Clean the numbered prefix
-                    clean_translation = re.sub(
-                        r"^\d+\.\s*", "", translation_lines[i].strip()
-                    )
-                    translations.append(
-                        clean_translation if clean_translation else original_text
-                    )
-                else:
-                    translations.append(original_text)
-
-        # Ensure we have the same number of translations as input
-        final_translations = translations[: len(texts)]
-        while len(final_translations) < len(texts):
-            final_translations.append(texts[len(final_translations)])
-
-        return final_translations
+        return self._parse_gemini_response(raw_response, texts)
 
     async def translate_batch_with_retry(
         self, texts: List[str], target_language: str, source_language: str = None

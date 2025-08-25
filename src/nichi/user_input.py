@@ -20,7 +20,7 @@ class UserInput:
 
     def get_menu_choice(self) -> str:
         """Get user menu choice"""
-        choices = ["1", "2", "3", "4", "5", "6", "7", "8"]
+        choices = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
         return Prompt.ask("Enter your choice", choices=choices)
 
     def select_file_from_list(
@@ -94,6 +94,76 @@ class UserInput:
                 return code
 
         return user_input
+
+    def prompt_for_timing_offset(self) -> Optional[int]:
+        """
+        Prompt user for timing offset in milliseconds
+
+        Returns:
+            Offset in milliseconds or None if cancelled/invalid
+        """
+        # Show help information
+        help_panel = Panel(
+            "Enter timing offset in milliseconds:\n"
+            "• Positive values (e.g., 1000) delay subtitles by that amount\n"
+            "• Negative values (e.g., -1500) advance subtitles by that amount\n"
+            "• Examples: 1000 = +1 second, -2500 = -2.5 seconds\n"
+            "• Range: ±600000 ms (±10 minutes)\n"
+            "• Original file will be backed up with .og extension",
+            title="Timing Adjustment Help",
+            style="dim",
+        )
+        self.console.print(help_panel)
+
+        while True:
+            try:
+                user_input = Prompt.ask(
+                    "Enter offset in milliseconds (or 'cancel' to abort)", default="0"
+                )
+
+                if user_input.lower() in ["cancel", "c", "quit", "q"]:
+                    return None
+
+                offset_ms = int(float(user_input.strip()))
+
+                # Validate range (±10 minutes)
+                max_offset = 10 * 60 * 1000  # 10 minutes in ms
+                if abs(offset_ms) > max_offset:
+                    self.console.print(
+                        Panel(
+                            f"Offset too large. Maximum allowed: ±{max_offset} ms (±10 minutes)",
+                            style="red",
+                        )
+                    )
+                    continue
+
+                # Confirm the adjustment
+                offset_seconds = offset_ms / 1000
+                direction = "delayed" if offset_ms > 0 else "advanced"
+
+                if offset_ms == 0:
+                    confirmation_text = "No timing adjustment will be made. Continue?"
+                else:
+                    confirmation_text = (
+                        f"Subtitles will be {direction} by {abs(offset_seconds):.3f} seconds.\n"
+                        f"Original file will be backed up with .og extension. Continue?"
+                    )
+
+                if Confirm.ask(confirmation_text):
+                    return offset_ms
+                else:
+                    continue
+
+            except (ValueError, TypeError):
+                self.console.print(
+                    Panel(
+                        "Invalid input. Please enter a number (e.g., 1000, -1500)",
+                        style="red",
+                    )
+                )
+                continue
+            except KeyboardInterrupt:
+                return None
 
     def confirm_overwrite(self, filename: str) -> bool:
         """Ask user to confirm file overwrite"""

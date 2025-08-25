@@ -39,7 +39,8 @@ class UIComponents:
             "[bold green]5.[/] Change working directory",
             "[bold cyan]6.[/] Translate SRT file to another language",
             "[bold cyan]7.[/] Show available languages for translation",
-            "[bold red]8.[/] Exit",
+            "[bold yellow]8.[/] Adjust subtitle timing (add/remove delay)",
+            "[bold red]9.[/] Exit",
         ]
         menu_text = "\n".join(menu_items)
         return Panel(menu_text, title="Available Actions", box=box.ROUNDED)
@@ -154,6 +155,31 @@ class UIComponents:
         table.add_row("Target Language", target_lang)
         if source_lang:
             table.add_row("Source Language", source_lang)
+
+        return table
+
+    def show_timing_adjustment_results(
+        self,
+        input_file: str,
+        output_file: str,
+        backup_file: str,
+        entries_processed: int,
+        offset_ms: int,
+    ) -> Table:
+        """Create a table showing timing adjustment results"""
+        table = Table(title="Timing Adjustment Complete", box=box.ROUNDED)
+        table.add_column("Property", style="cyan")
+        table.add_column("Value", style="green")
+
+        offset_seconds = offset_ms / 1000
+        direction = "Forward" if offset_ms > 0 else "Backward"
+
+        table.add_row("Original File", input_file)
+        table.add_row("Adjusted File", output_file)
+        table.add_row("Backup Created", backup_file)
+        table.add_row("Entries Processed", str(entries_processed))
+        table.add_row("Time Adjustment", f"{abs(offset_seconds):.3f}s {direction}")
+        table.add_row("Offset (ms)", f"{offset_ms:+d}")
 
         return table
 

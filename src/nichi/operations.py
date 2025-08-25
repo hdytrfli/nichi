@@ -6,6 +6,10 @@ Handles the main business logic for file operations
 import os
 from typing import List, Optional, Callable
 
+from nichi.converter import VTTToSRTConverter
+from nichi.organizer import FileOrganizer
+from nichi.timing_adjuster import SRTTimingAdjuster
+from nichi.translator import SRTTranslator
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (
@@ -25,10 +29,18 @@ from .user_input import UserInput
 class Operations:
     """Core operations for file handling"""
 
-    def __init__(self, converter, organizer, translator, console: Console):
+    def __init__(
+        self,
+        converter: VTTToSRTConverter,
+        organizer: FileOrganizer,
+        translator: SRTTranslator,
+        timing_adjuster: SRTTimingAdjuster,
+        console: Console,
+    ):
         self.converter = converter
         self.organizer = organizer
         self.translator = translator
+        self.timing_adjuster = timing_adjuster
         self.console = console
         self.ui = UIComponents(console)
         self.input_handler = UserInput(console)
@@ -42,7 +54,7 @@ class Operations:
             return []
 
     def translate_single_file(self, working_directory: str):
-        """Handle translation of a single SRT file"""
+        """Handle translation of a single SRT file with proper progress tracking"""
         srt_files = self.get_srt_files(working_directory)
         if not srt_files:
             self.console.print(Panel("No SRT files found in directory", style="yellow"))
@@ -106,7 +118,7 @@ class Operations:
                         task,
                         completed=completed,
                         total=100,
-                        description=f"Translating batch",
+                        description=f"Translating batch {current}/{total}",
                     )
 
             try:
@@ -125,7 +137,6 @@ class Operations:
                 self.console.print(Panel(f"Translation failed: {error}", style="red"))
                 return
 
-        # Show results
         result_table = self.ui.show_translation_results(
             selected_file,
             output_filename,
@@ -136,6 +147,82 @@ class Operations:
         )
         self.console.print(result_table)
         self.console.print(Panel("Translation completed successfully!", style="green"))
+
+    def adjust_subtitle_timing(self, working_directory: str):
+        """Handle subtitle timing adjustment with backup to .og file"""
+        srt_files = self.get_srt_files(working_directory)
+        if not srt_files:
+            self.console.print(Panel("No SRT files found in directory", style="yellow"))
+            return
+
+        # Show file selection table
+        file_table = self.ui.show_file_selection_table(srt_files, "Available SRT Files")
+        self.console.print(file_table)
+
+        # Get file selection
+        selected_file = self.input_handler.select_file_from_list(srt_files, "SRT file")
+        if not selected_file:
+            return
+
+        # Get timing offset
+        offset_ms = self.input_handler.prompt_for_timing_offset()
+        if offset_ms is None:
+            self.console.print(Panel("Timing adjustment cancelled", style="yellow"))
+            return
+
+        # Check if .og backup already exists
+        base_name = os.path.splitext(selected_file)[0]
+        backup_name = f"{base_name}.og.srt"
+        backup_path = os.path.join(working_directory, backup_name)
+
+        if os.path.exists(backup_path):
+            if not self.input_handler.confirm_overwrite(backup_name):
+                self.console.print(Panel("Timing adjustment cancelled", style="yellow"))
+                return
+
+        # Perform timing adjustment
+        input_path = os.path.join(working_directory, selected_file)
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=self.console,
+        ) as progress:
+            task = progress.add_task("Adjusting subtitle timing...", total=None)
+
+            try:
+                success, message, entries_processed, backup_created = (
+                    self.timing_adjuster.adjust_srt_file_with_backup(
+                        input_path, offset_ms
+                    )
+                )
+
+                if success:
+                    # Show results
+                    result_table = self.ui.show_timing_adjustment_results(
+                        selected_file,
+                        selected_file,  # Same filename (original is now the adjusted version)
+                        backup_name,  # Backup filename
+                        entries_processed,
+                        offset_ms,
+                    )
+                    self.console.print(result_table)
+                    self.console.print(
+                        Panel(
+                            f"Timing adjustment completed: {message}\nOriginal backed up as: {backup_name}",
+                            style="green",
+                        )
+                    )
+                else:
+                    self.console.print(
+                        Panel(f"Timing adjustment failed: {message}", style="red")
+                    )
+
+            except Exception as error:
+                progress.stop()
+                self.console.print(
+                    Panel(f"Timing adjustment failed: {error}", style="red")
+                )
 
     def convert_vtt_files(self, working_directory: str):
         """Handle VTT to SRT conversion"""

@@ -24,6 +24,7 @@ A simple TUI video file organizer with Google Gemini AI-powered translation capa
 
 ```
 .
+|-- LICENSE
 |-- readme.md
 |-- requirements.txt
 |-- setup.py
@@ -39,6 +40,7 @@ A simple TUI video file organizer with Google Gemini AI-powered translation capa
         |-- operations.py
         |-- organizer.py
         |-- srt_parser.py
+        |-- timing_adjuster.py
         |-- translator.py
         |-- tui.py
         |-- ui_components.py

@@ -23,7 +23,6 @@ from rich.progress import (
     MofNCompleteColumn,
     TimeElapsedColumn,
 )
-from traitlets import default
 
 from .ui_components import UIComponents
 from .user_input import UserInput
@@ -133,6 +132,53 @@ class Operations:
                     style="red",
                 )
             )
+
+    def manage_translation_cache(self):
+        """Handle translation cache management"""
+        try:
+            # Get cache info
+            cache_info = self.translator.translator.get_cache_info()
+
+            # Show current cache status
+            cache_table = self.ui.show_cache_info_table(cache_info)
+            self.console.print(cache_table)
+
+            if cache_info["files"] == 0:
+                self.console.print(Panel("Translation cache is empty", style="yellow"))
+                return
+
+            # Ask user if they want to clear cache
+            if self.input_handler.confirm_cache_clear(cache_info):
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    console=self.console,
+                ) as progress:
+                    task = progress.add_task(
+                        "Clearing translation cache...", total=None
+                    )
+
+                    success, message, new_cache_info = (
+                        self.translator.translator.clear_cache()
+                    )
+
+                    if success:
+                        result_table = self.ui.show_cache_clear_results(
+                            message, new_cache_info
+                        )
+                        self.console.print(result_table)
+                        self.console.print(
+                            Panel("Cache cleared successfully!", style="green")
+                        )
+                    else:
+                        self.console.print(
+                            Panel(f"Failed to clear cache: {message}", style="red")
+                        )
+            else:
+                self.console.print(Panel("Cache clearing cancelled", style="yellow"))
+
+        except Exception as e:
+            self.console.print(Panel(f"Error managing cache: {e}", style="red"))
 
     def translate_single_file(self, working_directory: str):
         """Handle translation of a single SRT file with proper progress tracking"""

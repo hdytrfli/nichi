@@ -39,9 +39,10 @@ class UIComponents:
             "[bold green]5.[/] Change working directory",
             "[bold cyan]6.[/] Translate SRT file to another language",
             "[bold cyan]7.[/] Show available languages for translation",
-            "[bold yellow]8.[/] Adjust subtitle timing (add/remove delay)",
-            "[bold magenta]9.[/] Compare two SRT files (diff viewer)",
-            "[bold red]10.[/] Exit",
+            "[bold cyan]8.[/] Adjust subtitle timing",
+            "[bold cyan]9.[/] Compare two Subtitle files",
+            "[bold magenta]10.[/] Manage translation cache",
+            "[bold red]11.[/] Exit",
         ]
         menu_text = "\n".join(menu_items)
         return Panel(menu_text, title="Available Actions", box=box.ROUNDED)
@@ -135,6 +136,39 @@ class UIComponents:
 
         return table
 
+    def show_cache_info_table(self, cache_info: dict) -> Table:
+        """Create a table showing translation cache information"""
+        table = Table(title="Translation Cache Information", box=box.ROUNDED)
+        table.add_column("Property", style="cyan")
+        table.add_column("Value", style="green")
+
+        table.add_row("Cache Directory", cache_info["cache_dir"])
+        table.add_row("Cache Files", str(cache_info["files"]))
+        table.add_row("Total Size", f"{cache_info['size_mb']} MB")
+
+        if cache_info["files"] > 0:
+            avg_size = (
+                cache_info["size"] / cache_info["files"]
+                if cache_info["files"] > 0
+                else 0
+            )
+            table.add_row("Average File Size", f"{avg_size / 1024:.1f} KB")
+
+        return table
+
+    def show_cache_clear_results(self, message: str, cache_info: dict) -> Table:
+        """Create a table showing cache clear results"""
+        table = Table(title="Cache Clear Results", box=box.ROUNDED)
+        table.add_column("Property", style="cyan")
+        table.add_column("Value", style="green")
+
+        table.add_row("Operation", "Cache Clear")
+        table.add_row("Result", message)
+        table.add_row("Remaining Files", str(cache_info["files"]))
+        table.add_row("Remaining Size", f"{cache_info['size_mb']} MB")
+
+        return table
+
     def show_translation_results(
         self,
         input_file: str,
@@ -156,6 +190,30 @@ class UIComponents:
         table.add_row("Target Language", target_lang)
         if source_lang:
             table.add_row("Source Language", source_lang)
+
+        return table
+
+    def show_batch_translation_results(
+        self, successful: List[dict], failed: List[tuple], target_lang: str
+    ) -> Table:
+        """Create a table showing batch translation results"""
+        table = Table(
+            title=f"Batch Translation Results (Target: {target_lang})", box=box.ROUNDED
+        )
+        table.add_column("Input File", style="cyan")
+        table.add_column("Output File", style="green")
+        table.add_column("Status", style="yellow")
+        table.add_column("Entries", style="blue", justify="right")
+
+        # Add successful translations
+        for result in successful:
+            table.add_row(
+                result["input"], result["output"], "✓ Success", str(result["entries"])
+            )
+
+        # Add failed translations
+        for input_file, error in failed:
+            table.add_row(input_file, "N/A", f"✗ Failed", "0")
 
         return table
 

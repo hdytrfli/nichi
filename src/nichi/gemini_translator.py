@@ -1,6 +1,6 @@
 """
 Google Gemini translation service
-High-performance translator for SRT subtitles with concurrent processing
+High-performance translator for SRT subtitles with concurrent processing and cache management
 """
 
 import re
@@ -8,6 +8,7 @@ import asyncio
 import random
 import hashlib
 import json
+import shutil
 from pathlib import Path
 from typing import List, Callable, Optional, Tuple
 import google.generativeai as genai
@@ -58,11 +59,18 @@ class GeminiTranslator:
         api_key = EnvLoader.get_api_key()
         genai.configure(api_key=api_key)
 
-        # Configure model
+        # Configure model with system instruction
         model_name = EnvLoader.get_config_value(
             "GEMINI_MODEL_NAME", "gemini-2.0-flash-exp"
         )
-        self.model = genai.GenerativeModel(model_name)
+
+        system_instruction = """You are a professional subtitle translator with expertise in multiple languages and cultural contexts. 
+        Your role is to provide accurate, natural, and contextually appropriate translations that preserve the original meaning, 
+        tone, and timing of subtitles while adapting to the linguistic conventions of the target language."""
+
+        self.model = genai.GenerativeModel(
+            model_name=model_name, system_instruction=system_instruction
+        )
 
         # Load configuration
         self.batch_size = int(
@@ -76,11 +84,50 @@ class GeminiTranslator:
         )
 
         self.cache_dir = Path.home() / ".config" / "nichi" / "cache"
-        self.cache_dir.mkdir(exist_ok=True)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def get_language_name(self, code: str) -> str:
         """Get full language name from code"""
         return self.LANGUAGES.get(code.lower(), code)
+
+    def get_cache_info(self) -> dict:
+        """Get information about cache usage"""
+        if not self.cache_dir.exists():
+            return {"cache_dir": str(self.cache_dir), "files": 0, "size": 0}
+
+        cache_files = list(self.cache_dir.glob("*.json"))
+        total_size = sum(f.stat().st_size for f in cache_files if f.exists())
+
+        return {
+            "cache_dir": str(self.cache_dir),
+            "files": len(cache_files),
+            "size": total_size,
+            "size_mb": 0 if total_size == 0 else round(total_size / (1024 * 1024), 2),
+        }
+
+    def clear_cache(self) -> Tuple[bool, str, dict]:
+        """
+        Clear translation cache
+
+        Returns:
+            Tuple of (success: bool, message: str, cache_info: dict)
+        """
+        try:
+            cache_info_before = self.get_cache_info()
+
+            if cache_info_before["files"] == 0:
+                return True, "Cache is already empty", cache_info_before
+
+            # Remove all cache files
+            for cache_file in self.cache_dir.glob("*.json"):
+                cache_file.unlink()
+
+            cache_info_after = self.get_cache_info()
+            message = f"Cleared {cache_info_before['files']} cache files ({cache_info_before['size_mb']} MB)"
+            return True, message, cache_info_after
+
+        except Exception as e:
+            return False, f"Failed to clear cache: {str(e)}", self.get_cache_info()
 
     def _get_cache_key(
         self, texts: List[str], target_language: str, source_language: str = None
@@ -188,10 +235,42 @@ class GeminiTranslator:
 
         return translations[: len(original_texts)]
 
+    def _get_translation_prompt(
+        self, source_lang_str: str, target_lang_str: str, batch_text: str
+    ) -> str:
+        """Generate translation prompt with language-specific instructions"""
+
+        base_instructions = [
+            "1. Maintain original tone and style",
+            "2. Keep non-dialogue cues like [music] or (laughs) unchanged",
+            "3. Translate idioms to natural equivalents, not literally",
+            "4. Make sure gender-specific terms are translated correctly based on context (e.g., in English 'good looking' can be 'tampan' or 'cantik' in Indonesian)",
+            "5. Return ONLY the numbered translations, no explanations",
+            "6. [CRITICAL] Subtitle can be multi-line, YOU MUST PRESERVE LINE BREAKS WITH \\n, THIS IS VERY IMPORTANT, DO NOT ADD ANOTHER NUMBER TO THE LINES WITHOUT NUMBER!",
+            "7. [CRITICAL] Each numbered item (1., 2., 3., etc.) represents ONE subtitle timing, if there's no number in the front means it's new line on the same number, DO NOT SPLIT THEM! [VERY IMPORTANT]",
+            "8. [CRITICAL] If there are XML tags in the subtitle, preserve them exactly",
+            "9. [CRITICAL] Use standard Indonesian subtitle conventions: prefer 'Aku' and 'Kamu' over colloquial 'Gue' and 'Lo'",
+            "10. [CRITICAL] Avoid outdated or overly formal terms like 'Bung' - use modern, natural Indonesian",
+            "11. [CRITICAL] Instead of using 'Bro' for 'Dude' translation use the character if possible or just remove the word if the meaning doesn't change",
+            "12. [CRITICAL] Use contemporary Indonesian that sounds natural in modern subtitles",
+        ]
+
+        instructions = "\n".join(base_instructions)
+        prompt = f"""Translate the following subtitle text from {source_lang_str} to {target_lang_str}.
+
+        Instructions:
+        {instructions}
+
+        Text to translate:
+        {batch_text}
+        """
+
+        return prompt
+
     async def translate_batch(
         self, texts: List[str], target_language: str, source_language: str = None
     ) -> List[str]:
-        """Translate a batch of texts using simplified and reliable parsing"""
+        """Translate a batch of texts using improved prompt and parsing"""
         if not texts:
             return []
 
@@ -217,23 +296,12 @@ class GeminiTranslator:
 
         batch_text = "\n".join(numbered_texts)
 
-        prompt = f"""
-        Translate the following subtitle text from {source_lang_str} to {target_lang_str}.
+        # DEBUG export the text to cache
+        self._save_cached_response(cache_key + "_debug", batch_text)
 
-        Instructions:
-        1. Maintain original tone and style
-        2. Keep non-dialogue cues like [music] or (laughs) unchanged
-        3. Translate idioms to natural equivalents, not literally
-        4. Use proper gender-specific terms when needed
-        5. For multi-line subtitles, *PRESERVE LINE BREAKS WITH \\n*, THIS IS VERY IMPORTANT!
-        6. Return ONLY the numbered translations, no explanations
-        7. Each numbered item (1., 2., 3., etc.) represents ONE subtitle timing - DO NOT SPLIT THEM
-        8. Use language specific conventions for translation style
-        9. CRITICAL: Maintain the exact numbering sequence 1., 2., 3., etc.
-
-        Text to translate:
-        {batch_text}
-        """
+        prompt = self._get_translation_prompt(
+            source_lang_str, target_lang_str, batch_text
+        )
 
         response = await asyncio.to_thread(self.model.generate_content, prompt)
 

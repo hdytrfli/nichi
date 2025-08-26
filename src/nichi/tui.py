@@ -71,6 +71,8 @@ class ExtendedVideoOrganizerTUI:
             self.operations.adjust_subtitle_timing(self.working_directory)
         elif choice == "9":
             self.operations.compare_srt_files(self.working_directory)
+        elif choice == "10":
+            self.operations.manage_translation_cache()
 
     def run(self):
         """Main application loop"""
@@ -81,7 +83,7 @@ class ExtendedVideoOrganizerTUI:
 
             choice = self.input_handler.get_menu_choice()
 
-            if choice == "10":
+            if choice == "11":
                 if self.input_handler.confirm_exit():
                     self.console.print(
                         Panel(
@@ -95,5 +97,5 @@ class ExtendedVideoOrganizerTUI:
             self.clear_screen()
             self.handle_menu_choice(choice)
 
-            if choice != "10":
+            if choice != "11":
                 self.input_handler.wait_for_continue()

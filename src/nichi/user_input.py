@@ -1,6 +1,6 @@
 """
 User input handling for the video organizer TUI
-Manages prompts, validation, and user interactions including diff feature
+Manages prompts, validation, and user interactions including cache management
 """
 
 import os
@@ -20,7 +20,7 @@ class UserInput:
 
     def get_menu_choice(self) -> str:
         """Get user menu choice"""
-        choices = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+        choices = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]
         return Prompt.ask("Enter your choice", choices=choices)
 
     def select_file_from_list(
@@ -32,6 +32,7 @@ class UserInput:
         Args:
             files: List of filenames
             file_type: Type description for prompts
+            default: Default selection index
 
         Returns:
             Selected filename or None if cancelled
@@ -95,6 +96,47 @@ class UserInput:
                 return code
 
         return user_input
+
+    def confirm_cache_clear(self, cache_info: dict) -> bool:
+        """
+        Ask user to confirm cache clearing
+
+        Args:
+            cache_info: Dictionary with cache information
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        if cache_info["files"] == 0:
+            return False
+
+        warning_text = (
+            f"This will permanently delete {cache_info['files']} cache files "
+            f"({cache_info['size_mb']} MB).\n"
+            "Cached translations will need to be re-translated if needed again.\n"
+            "Do you want to continue?"
+        )
+
+        return Confirm.ask(warning_text, default=False)
+
+    def confirm_batch_translation(self, file_count: int, target_lang: str) -> bool:
+        """
+        Ask user to confirm batch translation
+
+        Args:
+            file_count: Number of files to translate
+            target_lang: Target language code
+
+        Returns:
+            True if user confirms, False otherwise
+        """
+        confirmation_text = (
+            f"This will translate {file_count} SRT files to {target_lang}.\n"
+            "Files with existing translated versions will be skipped.\n"
+            "This operation may take several minutes. Continue?"
+        )
+
+        return Confirm.ask(confirmation_text, default=True)
 
     def prompt_for_timing_offset(self) -> Optional[int]:
         """

@@ -1,15 +1,16 @@
 """
-SRT timing adjustment utility
-Allows adding/subtracting time offsets from all subtitle entries
+Improved SRT timing adjustment utility
+Better backup naming that doesn't interfere with media servers like Jellyfin
 """
 
 import re
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from datetime import datetime, timedelta
+from pathlib import Path
 
 
 class SRTTimingAdjuster:
-    """Utility for adjusting SRT subtitle timing"""
+    """Utility for adjusting SRT subtitle timing with improved backup strategy"""
 
     @staticmethod
     def parse_srt_time(time_str: str) -> timedelta:
@@ -112,28 +113,62 @@ class SRTTimingAdjuster:
         return adjusted_entries
 
     @staticmethod
-    def adjust_srt_file_with_backup(input_path: str, offset_ms: int) -> tuple:
+    def get_backup_filename(input_path: str) -> str:
         """
-        Adjust timing for an entire SRT file, backing up original with .og extension
+        Generate a backup filename that won't be detected by media servers
+
+        Args:
+            input_path: Path to the original file
+
+        Returns:
+            Path for the backup file
+        """
+        input_file = Path(input_path)
+
+        # Start with .old extension
+        backup_path = input_file.with_suffix(input_file.suffix + ".old")
+
+        # If that exists, try .old.1, .old.2, etc.
+        counter = 1
+        while backup_path.exists():
+            backup_path = input_file.with_suffix(f"{input_file.suffix}.old.{counter}")
+            counter += 1
+
+            # Safety check to prevent infinite loop
+            if counter > 100:
+                # Use timestamp as fallback
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_path = input_file.with_suffix(
+                    f"{input_file.suffix}.old.{timestamp}"
+                )
+                break
+
+        return str(backup_path)
+
+    @staticmethod
+    def adjust_srt_file_with_backup(
+        input_path: str, offset_ms: int
+    ) -> Tuple[bool, str, int, str]:
+        """
+        Adjust timing for an entire SRT file, backing up original with .old extension
 
         Args:
             input_path: Path to input SRT file
             offset_ms: Offset in milliseconds (positive or negative)
 
         Returns:
-            Tuple of (success: bool, message: str, entries_processed: int, backup_path: str)
+            Tuple of (success: bool, message: str, entries_processed: int, backup_filename: str)
         """
         try:
             import shutil
-            from pathlib import Path
 
             # Import here to avoid circular imports
             from .srt_parser import SRTParser
 
             input_file = Path(input_path)
 
-            # Create backup filename with .og extension
-            backup_path = input_file.with_suffix(".og" + input_file.suffix)
+            # Generate backup filename that won't conflict with media servers
+            backup_path = SRTTimingAdjuster.get_backup_filename(input_path)
 
             # Parse the original file
             entries = SRTParser.parse_srt_file(input_path)
@@ -153,7 +188,7 @@ class SRTTimingAdjuster:
             direction = "forward" if offset_ms > 0 else "backward"
             message = f"Adjusted {len(adjusted_entries)} entries by {abs(offset_seconds):.3f}s {direction}"
 
-            return True, message, len(adjusted_entries), str(backup_path)
+            return True, message, len(adjusted_entries), Path(backup_path).name
 
         except Exception as e:
             return False, f"Error adjusting timing: {str(e)}", 0, ""

@@ -149,7 +149,7 @@ class Operations:
         self.console.print(Panel("Translation completed successfully!", style="green"))
 
     def adjust_subtitle_timing(self, working_directory: str):
-        """Handle subtitle timing adjustment with backup to .og file"""
+        """Handle subtitle timing adjustment with backup to .old file"""
         srt_files = self.get_srt_files(working_directory)
         if not srt_files:
             self.console.print(Panel("No SRT files found in directory", style="yellow"))
@@ -170,16 +170,6 @@ class Operations:
             self.console.print(Panel("Timing adjustment cancelled", style="yellow"))
             return
 
-        # Check if .og backup already exists
-        base_name = os.path.splitext(selected_file)[0]
-        backup_name = f"{base_name}.og.srt"
-        backup_path = os.path.join(working_directory, backup_name)
-
-        if os.path.exists(backup_path):
-            if not self.input_handler.confirm_overwrite(backup_name):
-                self.console.print(Panel("Timing adjustment cancelled", style="yellow"))
-                return
-
         # Perform timing adjustment
         input_path = os.path.join(working_directory, selected_file)
 
@@ -191,7 +181,7 @@ class Operations:
             task = progress.add_task("Adjusting subtitle timing...", total=None)
 
             try:
-                success, message, entries_processed, backup_created = (
+                success, message, entries_processed, backup_filename = (
                     self.timing_adjuster.adjust_srt_file_with_backup(
                         input_path, offset_ms
                     )
@@ -202,14 +192,14 @@ class Operations:
                     result_table = self.ui.show_timing_adjustment_results(
                         selected_file,
                         selected_file,  # Same filename (original is now the adjusted version)
-                        backup_name,  # Backup filename
+                        backup_filename,  # Backup filename
                         entries_processed,
                         offset_ms,
                     )
                     self.console.print(result_table)
                     self.console.print(
                         Panel(
-                            f"Timing adjustment completed: {message}\nOriginal backed up as: {backup_name}",
+                            f"Timing adjustment completed: {message}\nOriginal backed up as: {backup_filename}",
                             style="green",
                         )
                     )

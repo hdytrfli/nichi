@@ -1,9 +1,11 @@
 """
 Core operations for the video organizer
-Handles the main business logic for file operations
+Simplified diff feature using external tools like git diff or system diff
 """
 
 import os
+import subprocess
+import shutil
 from typing import List, Optional, Callable
 
 from nichi.converter import VTTToSRTConverter
@@ -21,6 +23,7 @@ from rich.progress import (
     MofNCompleteColumn,
     TimeElapsedColumn,
 )
+from traitlets import default
 
 from .ui_components import UIComponents
 from .user_input import UserInput
@@ -52,6 +55,84 @@ class Operations:
             return [item for item in items if item.lower().endswith(".srt")]
         except Exception:
             return []
+
+    def _get_available_diff_tools(self) -> List[tuple]:
+        """Get available diff tools on the system"""
+        tools = []
+
+        if shutil.which("git"):
+            tools.append(("git", "Git difftool"))
+
+        return tools
+
+    def _run_git_diff(self, file1_path: str, file2_path: str):
+        """Run git difftool on two files"""
+        try:
+            cmd = [
+                "git",
+                "difftool",
+                "--no-index",
+                "--no-prompt",
+                "--tool=vimdiff",
+                file1_path,
+                file2_path,
+            ]
+            result = subprocess.run(cmd, check=False, shell=True)
+            return True
+        except Exception as e:
+            self.console.print(Panel(f"Failed to run git difftool: {e}", style="red"))
+            return False
+
+    def compare_srt_files(self, working_directory: str):
+        """Handle SRT file comparison using git difftool"""
+        srt_files = self.get_srt_files(working_directory)
+        if len(srt_files) < 2:
+            self.console.print(
+                Panel("Need at least 2 SRT files to compare", style="yellow")
+            )
+            return
+
+        if not shutil.which("git"):
+            self.console.print(
+                Panel(
+                    "Git is not available. Please install git to use diff functionality.",
+                    style="red",
+                )
+            )
+            return
+
+        # Show file selection table only once at the beginning
+        file_table = self.ui.show_file_selection_table(srt_files, "Available SRT Files")
+        self.console.print(file_table)
+
+        self.console.print("\nSelect files to compare:")
+        first_file = self.input_handler.select_file_from_list(
+            srt_files, "First file", default=1
+        )
+        second_file = self.input_handler.select_file_from_list(
+            srt_files, "Second file", default=2
+        )
+
+        if not first_file or not second_file:
+            return
+
+        # Get file paths
+        first_path = os.path.join(working_directory, first_file)
+        second_path = os.path.join(working_directory, second_file)
+
+        self.console.print(
+            f"\n[bold blue]Opening diff with git difftool...[/bold blue]"
+        )
+
+        success = self._run_git_diff(first_path, second_path)
+
+        if not success:
+            self.console.print(
+                Panel(
+                    "Failed to run git difftool. Make sure git is properly configured with a diff tool.",
+                    style="red",
+                )
+            )
 
     def translate_single_file(self, working_directory: str):
         """Handle translation of a single SRT file with proper progress tracking"""

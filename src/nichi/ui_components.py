@@ -40,7 +40,8 @@ class UIComponents:
             "[bold cyan]6.[/] Translate SRT file to another language",
             "[bold cyan]7.[/] Show available languages for translation",
             "[bold yellow]8.[/] Adjust subtitle timing (add/remove delay)",
-            "[bold red]9.[/] Exit",
+            "[bold magenta]9.[/] Compare two SRT files (diff viewer)",
+            "[bold red]10.[/] Exit",
         ]
         menu_text = "\n".join(menu_items)
         return Panel(menu_text, title="Available Actions", box=box.ROUNDED)

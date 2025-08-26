@@ -1,6 +1,6 @@
 """
 Simplified Terminal User Interface
-Main controller that orchestrates UI components and operations
+Main controller that orchestrates UI components and operations including diff feature
 """
 
 import os
@@ -22,7 +22,7 @@ from .operations import Operations
 
 
 class ExtendedVideoOrganizerTUI:
-    """Main TUI controller - simplified and modular"""
+    """Main TUI controller - simplified and modular with diff feature"""
 
     def __init__(self, working_directory: str):
         self.working_directory = working_directory
@@ -69,6 +69,8 @@ class ExtendedVideoOrganizerTUI:
             self.operations.show_available_languages()
         elif choice == "8":
             self.operations.adjust_subtitle_timing(self.working_directory)
+        elif choice == "9":
+            self.operations.compare_srt_files(self.working_directory)
 
     def run(self):
         """Main application loop"""
@@ -79,7 +81,7 @@ class ExtendedVideoOrganizerTUI:
 
             choice = self.input_handler.get_menu_choice()
 
-            if choice == "9":
+            if choice == "10":
                 if self.input_handler.confirm_exit():
                     self.console.print(
                         Panel(
@@ -93,5 +95,5 @@ class ExtendedVideoOrganizerTUI:
             self.clear_screen()
             self.handle_menu_choice(choice)
 
-            if choice != "9":
+            if choice != "10":
                 self.input_handler.wait_for_continue()

@@ -1,6 +1,6 @@
 """
 User input handling for the video organizer TUI
-Manages prompts, validation, and user interactions
+Manages prompts, validation, and user interactions including diff feature
 """
 
 import os
@@ -20,11 +20,11 @@ class UserInput:
 
     def get_menu_choice(self) -> str:
         """Get user menu choice"""
-        choices = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+        choices = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
         return Prompt.ask("Enter your choice", choices=choices)
 
     def select_file_from_list(
-        self, files: List[str], file_type: str = "file"
+        self, files: List[str], file_type: str = "file", default: int = 1
     ) -> Optional[str]:
         """
         Let user select a file from a list
@@ -44,7 +44,8 @@ class UserInput:
 
         try:
             file_index = (
-                IntPrompt.ask(f"Select {file_type} (1-{len(files)})", default=1) - 1
+                IntPrompt.ask(f"Select {file_type} (1-{len(files)})", default=default)
+                - 1
             )
             if file_index < 0 or file_index >= len(files):
                 self.console.print(Panel("Invalid file selection", style="red"))
@@ -109,7 +110,7 @@ class UserInput:
             "• Negative values (e.g., -1500) advance subtitles by that amount\n"
             "• Examples: 1000 = +1 second, -2500 = -2.5 seconds\n"
             "• Range: ±600000 ms (±10 minutes)\n"
-            "• Original file will be backed up with .og extension",
+            "• Original file will be backed up with .old extension",
             title="Timing Adjustment Help",
             style="dim",
         )
@@ -146,7 +147,7 @@ class UserInput:
                 else:
                     confirmation_text = (
                         f"Subtitles will be {direction} by {abs(offset_seconds):.3f} seconds.\n"
-                        f"Original file will be backed up with .og extension. Continue?"
+                        f"Original file will be backed up with .old extension. Continue?"
                     )
 
                 if Confirm.ask(confirmation_text):

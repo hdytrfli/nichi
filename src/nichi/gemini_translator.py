@@ -51,6 +51,8 @@ class GeminiTranslator:
         "tr": "Turkish",
     }
 
+    _DELIMITER = "⚡"
+
     def __init__(self):
         # Load environment variables
         EnvLoader.load_env()
@@ -196,44 +198,25 @@ class GeminiTranslator:
     def _parse_gemini_response(
         self, raw_response: str, original_texts: List[str]
     ) -> List[str]:
-        """Parse raw Gemini response into translations with simplified logic"""
+        """
+        Parse raw Gemini response into a list of translations using the unique delimiter.
+        This is much more robust than relying on numbered lists from the model's output.
+        """
         if not raw_response:
             return original_texts
 
-        translations = []
-        lines = raw_response.strip().split("\n")
-        current_translation = ""
-        expected_number = 1
-
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-
-            # Check if line starts with expected number
-            number_match = re.match(rf"^{expected_number}\.\s*(.*)", line)
-            if number_match:
-                # Save previous translation if we have one
-                if current_translation and len(translations) == expected_number - 2:
-                    translations.append(current_translation.strip())
-
-                # Start new translation
-                current_translation = number_match.group(1)
-                expected_number += 1
-            else:
-                # Continuation of current translation (preserve line breaks)
-                if current_translation:
-                    current_translation += "\n" + line
-
-        # Don't forget the last translation
-        if current_translation:
-            translations.append(current_translation.strip())
+        # Split the response using the unique delimiter
+        # The split can result in an empty string at the beginning if the response starts with the delimiter
+        # We also strip leading/trailing whitespace from each part.
+        translated_parts = [
+            part.strip() for part in raw_response.split(self._DELIMITER) if part.strip()
+        ]
 
         # Ensure we have exactly the same number of translations as input
-        while len(translations) < len(original_texts):
-            translations.append(original_texts[len(translations)])
+        while len(translated_parts) < len(original_texts):
+            translated_parts.append(original_texts[len(translated_parts)])
 
-        return translations[: len(original_texts)]
+        return translated_parts[: len(original_texts)]
 
     def _get_translation_prompt(
         self, source_lang_str: str, target_lang_str: str, batch_text: str
@@ -245,10 +228,12 @@ class GeminiTranslator:
             "2. Keep non-dialogue cues like [music] or (laughs) unchanged",
             "3. Translate idioms to natural equivalents, not literally",
             "4. Make sure gender-specific terms are translated correctly based on context (e.g., in English 'good looking' can be 'tampan' or 'cantik' in Indonesian)",
-            "5. Return ONLY the numbered translations, no explanations",
-            "6. [CRITICAL] Subtitle can be multi-line, YOU MUST PRESERVE LINE BREAKS WITH \\n, THIS IS VERY IMPORTANT, DO NOT ADD ANOTHER NUMBER TO THE LINES WITHOUT NUMBER!",
-            "7. [CRITICAL] Each numbered item (1., 2., 3., etc.) represents ONE subtitle timing, if there's no number in the front means it's new line on the same number, DO NOT SPLIT THEM! [VERY IMPORTANT]",
-            "8. [CRITICAL] If there are XML tags in the subtitle, preserve them exactly",
+            "5. [CRITICAL] Return ONLY the translations, with each translated subtitle separated by the unique delimiter '"
+            + self._DELIMITER
+            + "'. Do not use numbers or any other symbols.",
+            "6. [CRITICAL] Subtitle can be multi-line, YOU MUST PRESERVE LINE BREAKS, DO NOT ADD OR REMOVE DELIMITER, RESPECT THE ORIGINAL SEPARATOR!",
+            "7. [CRITICAL] If there are XML tags in the subtitle, preserve them exactly",
+            "8. [CRITICAL] DO NOT COMBINE LINES THATS ARE SUPPOSED TO BE SEPARATED, even if the translation makes more sense if it put in one group, RESPECT THE ORIGINAL SEPARATOR!",
             "9. [CRITICAL] Use standard Indonesian subtitle conventions: prefer 'Aku' and 'Kamu' over colloquial 'Gue' and 'Lo'",
             "10. [CRITICAL] Avoid outdated or overly formal terms like 'Bung' - use modern, natural Indonesian",
             "11. [CRITICAL] Instead of using 'Bro' for 'Dude' translation use the character if possible or just remove the word if the meaning doesn't change",
@@ -262,6 +247,7 @@ class GeminiTranslator:
         {instructions}
 
         Text to translate:
+        {self._DELIMITER}
         {batch_text}
         """
 
@@ -288,16 +274,8 @@ class GeminiTranslator:
         )
         target_lang_str = self.get_language_name(target_language)
 
-        # Create numbered list for translation with better formatting
-        numbered_texts = []
-        for i, text in enumerate(texts):
-            clean_text = text.strip()
-            numbered_texts.append(f"{i+1}. {clean_text}")
-
-        batch_text = "\n".join(numbered_texts)
-
-        # DEBUG export the text to cache
-        self._save_cached_response(cache_key + "_debug", batch_text)
+        # Create the text content for the model by joining the texts with the unique delimiter
+        batch_text = self._DELIMITER.join(texts)
 
         prompt = self._get_translation_prompt(
             source_lang_str, target_lang_str, batch_text

@@ -212,11 +212,7 @@ class GeminiTranslator:
             part.strip() for part in raw_response.split(self._DELIMITER) if part.strip()
         ]
 
-        # Ensure we have exactly the same number of translations as input
-        while len(translated_parts) < len(original_texts):
-            translated_parts.append(original_texts[len(translated_parts)])
-
-        return translated_parts[: len(original_texts)]
+        return translated_parts
 
     def _get_translation_prompt(
         self, source_lang_str: str, target_lang_str: str, batch_text: str

@@ -7,7 +7,7 @@ Simplified version with Google Gemini translation capabilities.
 import argparse
 import os
 import sys
-
+from nichi import __version__
 from nichi.ui.tui import ExtendedVideoOrganizerTUI
 
 
@@ -59,7 +59,7 @@ def main():
         default=".",
         help="Working directory (default: current directory)",
     )
-    parser.add_argument("--version", action="version", version="Video File Organizer v2.0.0")
+    parser.add_argument("--version", action="version", version=f"Video File Organizer v{__version__}")
 
     args = parser.parse_args()
     working_directory = validate_directory(args.directory)

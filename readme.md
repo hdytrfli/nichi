@@ -261,3 +261,7 @@ black src/
 # Sort imports with isort
 isort src/
 ```
+
+### Releasing
+
+To release a new version of nichi, follow the instructions in [RELEASE.md](RELEASE.md).

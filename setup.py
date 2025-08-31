@@ -20,7 +20,7 @@ def load_readme():
 
 setup(
     name="nichi",
-    version="2.0.0",
+    version="2.0.1",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     install_requires=load_requirements(),

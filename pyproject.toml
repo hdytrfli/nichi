@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nichi"
-version = "2.0.0"
+version = "2.0.1"
 description = "A comprehensive tool for organizing video files, converting VTT subtitles to SRT format, and translating SRT files using Google Gemini AI."
 readme = "README.md"
 authors = [
@@ -32,7 +32,7 @@ dependencies = [
     "mdurl==0.1.2",
     "Pygments==2.19.2",
     "rich==14.1.0",
-    "google-generativeai==0.3.0",
+    "google-generativeai>=0.5.0",
     "python-dotenv==1.0.0",
 ]
 
@@ -40,6 +40,7 @@ dependencies = [
 Homepage = "https://github.com/hdytrfli/nichi"
 Repository = "https://github.com/hdytrfli/nichi"
 Issues = "https://github.com/hdytrfli/nichi/issues"
+Changelog = "https://github.com/hdytrfli/nichi/releases"
 
 [project.scripts]
 nichi = "nichi.main:main"

@@ -1,6 +1,6 @@
 # Video File Organizer with AI Translation
 
-A simple TUI video file organizer with Google Gemini AI-powered translation capabilities for SRT subtitle files. This tool helps you organize your video files and translate subtitle files to any supported language with AI translation.
+A TUI video file organizer with Google Gemini AI-powered translation capabilities for SRT subtitle files. This tool helps you organize your video files and translate subtitle files to any supported language with AI translation.
 
 ## Features
 
@@ -63,7 +63,15 @@ A simple TUI video file organizer with Google Gemini AI-powered translation capa
 
 ## Installation
 
-### 1. Install Dependencies
+### Via PyPI (Recommended)
+
+```bash
+pip install nichi
+```
+
+### From Source
+
+#### 1. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -71,11 +79,11 @@ pip install -r requirements.txt
 
 Key dependencies:
 
-- `google-generativeai==0.3.0` - Google Gemini AI SDK
+- `google-generativeai>=0.5.0` - Google Gemini AI SDK
 - `python-dotenv==1.0.0` - Environment variable management
 - `rich==14.1.0` - Beautiful terminal interface
 
-### 2. Set up Google AI API Key
+#### 2. Set up Google AI API Key
 
 1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Create a new API key for Google Gemini
@@ -90,7 +98,7 @@ GOOGLE_AI_API_KEY=your_actual_api_key_here
 GEMINI_MODEL_NAME=gemini-2.0-flash-exp
 ```
 
-### 3. Install the Package
+#### 3. Install the Package
 
 ```bash
 # Development installation

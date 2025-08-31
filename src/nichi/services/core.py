@@ -17,7 +17,18 @@ from google.api_core.exceptions import (
 )
 
 from nichi.config import config
-from nichi.models import SRTEntry
+from nichi.constants import (
+    ENV_GEMINI_MODEL_NAME,
+    ENV_TRANSLATION_BATCH_SIZE,
+    ENV_GEMINI_MAX_RETRIES,
+    ENV_GEMINI_BASE_DELAY,
+    ENV_GEMINI_MAX_DELAY,
+    DEFAULT_GEMINI_MODEL,
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_MAX_RETRIES,
+    DEFAULT_BASE_DELAY,
+    DEFAULT_MAX_DELAY,
+)
 
 
 class GeminiCore:
@@ -32,7 +43,7 @@ class GeminiCore:
         genai.configure(api_key=api_key)
 
         # Configure model with system instruction
-        model_name = config.get_config_value("GEMINI_MODEL_NAME", "gemini-2.0-flash-exp")
+        model_name = config.get_config_value(ENV_GEMINI_MODEL_NAME, DEFAULT_GEMINI_MODEL)
 
         system_instruction = (
             "You are a professional subtitle translator with expertise in multiple languages and cultural contexts. \n"
@@ -43,10 +54,10 @@ class GeminiCore:
         self.model = genai.GenerativeModel(model_name=model_name, system_instruction=system_instruction)
 
         # Load configuration
-        self.batch_size = config.get_int_config_value("TRANSLATION_BATCH_SIZE", 200)
-        self.max_retries = config.get_int_config_value("GEMINI_MAX_RETRIES", 3)
-        self.base_delay = config.get_float_config_value("GEMINI_BASE_DELAY", 1.0)
-        self.max_delay = config.get_float_config_value("GEMINI_MAX_DELAY", 60.0)
+        self.batch_size = config.get_int_config_value(ENV_TRANSLATION_BATCH_SIZE, DEFAULT_BATCH_SIZE)
+        self.max_retries = config.get_int_config_value(ENV_GEMINI_MAX_RETRIES, DEFAULT_MAX_RETRIES)
+        self.base_delay = config.get_float_config_value(ENV_GEMINI_BASE_DELAY, DEFAULT_BASE_DELAY)
+        self.max_delay = config.get_float_config_value(ENV_GEMINI_MAX_DELAY, DEFAULT_MAX_DELAY)
         self.max_concurrent = config.get_int_config_value("MAX_CONCURRENT_REQUESTS", 5)
 
     def _get_cache_key(self, texts: List[str], target_language: str, source_language: str = None) -> str:

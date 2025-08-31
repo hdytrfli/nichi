@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 from typing import List
 
+from nichi.constants import VIDEO_EXTENSIONS, SUBTITLE_EXTENSIONS
+
 
 def get_files_by_extension(directory: str, extensions: List[str]) -> List[str]:
     """
@@ -76,8 +78,7 @@ def is_video_file(filename: str) -> bool:
     Returns:
         True if the file is a video file, False otherwise
     """
-    video_extensions = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm"]
-    return get_file_extension(filename) in video_extensions
+    return get_file_extension(filename) in VIDEO_EXTENSIONS
 
 
 def is_subtitle_file(filename: str) -> bool:
@@ -90,5 +91,4 @@ def is_subtitle_file(filename: str) -> bool:
     Returns:
         True if the file is a subtitle file, False otherwise
     """
-    subtitle_extensions = [".srt", ".vtt", ".sub", ".idx", ".ssa", ".ass"]
-    return get_file_extension(filename) in subtitle_extensions
+    return get_file_extension(filename) in SUBTITLE_EXTENSIONS

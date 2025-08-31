@@ -1,12 +1,13 @@
 """User input handling for the video organizer TUI."""
 
 import os
-from pathlib import Path
 from typing import Dict, List, Optional
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, IntPrompt, Prompt
+
+from nichi.constants import MENU_CHOICES
 
 
 class UserInput:
@@ -17,8 +18,7 @@ class UserInput:
 
     def get_menu_choice(self) -> str:
         """Get user menu choice."""
-        choices = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]
-        user_choice = Prompt.ask("Enter your choice", choices=choices)
+        user_choice = Prompt.ask("Enter your choice", choices=MENU_CHOICES)
         return user_choice
 
     def select_file_from_list(self, files: List[str], file_type: str = "file", default: int = 1) -> Optional[str]:
@@ -114,14 +114,8 @@ class UserInput:
         if file_count == 0:
             return False
 
-        warning_text = (
-            "This will permanently delete %d cache files "
-            "(%.1f MB).\n"
-            "Cached translations will need to be re-translated if needed again.\n"
-            "Do you want to continue?"
-        ) % (file_count, cache_info['size_mb'])
-
-        confirmation_result = Confirm.ask(warning_text, default=False)
+        confirmation_text = "Are you sure you want to empty the cache?"
+        confirmation_result = Confirm.ask(confirmation_text, default=False)
         return confirmation_result
 
     def confirm_batch_translation(self, file_count: int, target_lang: str) -> bool:
@@ -184,9 +178,7 @@ class UserInput:
                 max_offset = 10 * 60 * 1000  # 10 minutes in ms
                 abs_offset = abs(offset_ms)
                 if abs_offset > max_offset:
-                    error_message = (
-                        "Offset too large. Maximum allowed: ±%d ms (±10 minutes)"
-                    ) % max_offset
+                    error_message = ("Offset too large. Maximum allowed: ±%d ms (±10 minutes)") % max_offset
                     error_panel = Panel(error_message, style="red")
                     self.console.print(error_panel)
                     continue

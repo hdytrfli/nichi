@@ -8,7 +8,7 @@ import os
 import sys
 import argparse
 from pathlib import Path
-from nichi.tui import ExtendedVideoOrganizerTUI
+from nichi.ui.tui import ExtendedVideoOrganizerTUI
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -56,7 +56,6 @@ def main():
         help="Working directory (default: current directory)",
     )
     parser.add_argument("--version", action="version", version="Video File Organizer v2.0.0")
-
     args = parser.parse_args()
     working_directory = validate_directory(args.directory)
 

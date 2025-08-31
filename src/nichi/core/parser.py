@@ -85,7 +85,7 @@ class SRTParser:
                 index_line = "%d\n" % entry.index
                 time_line = "%s --> %s\n" % (entry.start_time, entry.end_time)
                 text_line = "%s\n\n" % entry.text
-                
+
                 file.write(index_line)
                 file.write(time_line)
                 file.write(text_line)

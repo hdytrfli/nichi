@@ -1,11 +1,10 @@
 """Main Terminal User Interface controller."""
 
 import os
-import sys
 from pathlib import Path
 
 from rich.console import Console
-from rich.panel import Panel
+from rich.table import Table
 
 from nichi.core.converter import VTTToSRTConverter
 from nichi.core.organizer import FileOrganizer
@@ -34,6 +33,7 @@ class ExtendedVideoOrganizerTUI:
 
         # Import and initialize operations here to avoid circular import
         from nichi.core.operations import Operations
+
         self.operations = Operations(
             self.converter,
             self.organizer,
@@ -41,6 +41,74 @@ class ExtendedVideoOrganizerTUI:
             self.timing_adjuster,
             self.console,
         )
+
+    def show_environment_variables(self):
+        """Display relevant environment variables in a table format."""
+        from nichi.constants import (
+            ENV_GOOGLE_AI_API_KEY,
+            ENV_GEMINI_MODEL_NAME,
+            ENV_GOOGLE_AI_PROJECT_ID,
+            ENV_TRANSLATION_BATCH_SIZE,
+            ENV_DEFAULT_TARGET_LANGUAGE,
+            ENV_GEMINI_MAX_RETRIES,
+            ENV_GEMINI_BASE_DELAY,
+            ENV_GEMINI_MAX_DELAY,
+        )
+        import os
+
+        # Create table for environment variables
+        table = Table(title="Environment Variables")
+        table.add_column("Variable", style="cyan", width=30)
+        table.add_column("Value", style="green", width=40)
+
+        # Define relevant environment variables from .env.example
+        relevant_vars = [
+            ENV_GOOGLE_AI_API_KEY,
+            ENV_GEMINI_MODEL_NAME,
+            ENV_GOOGLE_AI_PROJECT_ID,
+            ENV_TRANSLATION_BATCH_SIZE,
+            ENV_DEFAULT_TARGET_LANGUAGE,
+            ENV_GEMINI_MAX_RETRIES,
+            ENV_GEMINI_BASE_DELAY,
+            ENV_GEMINI_MAX_DELAY,
+        ]
+
+        # Show .env file contents or environment variables
+        env_vars_found = {}
+
+        # Check for .env file
+        current_dir = Path.cwd()
+        cwd_env = current_dir / ".env"
+
+        if cwd_env.exists():
+            try:
+                with open(cwd_env, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            key, value = line.split("=", 1)
+                            env_vars_found[key] = value
+            except Exception:
+                pass  # Continue with environment variables if .env read fails
+
+        # Get values from environment variables or .env file
+        for var in relevant_vars:
+            # Check if we found it in .env file
+            if var in env_vars_found:
+                value = env_vars_found[var]
+            else:
+                # Get from system environment
+                value = os.environ.get(var, "")
+
+            # Mask sensitive information
+            if var == ENV_GOOGLE_AI_API_KEY and value:
+                value = "***"
+            elif var == ENV_GOOGLE_AI_API_KEY and not value:
+                value = "Not set"
+
+            table.add_row(var, value if value else "Not set")
+
+        self.console.print(table)
 
     def clear_screen(self):
         """Clear the console."""
@@ -57,23 +125,30 @@ class ExtendedVideoOrganizerTUI:
         elif choice == "2":
             self.operations.organize_files(self.working_directory)
         elif choice == "3":
-            self.operations.convert_and_organize(self.working_directory)
-        elif choice == "4":
             self.ui.show_directory_contents(self.working_directory)
-        elif choice == "5":
+        elif choice == "4":
             new_dir = self.input_handler.change_directory(self.working_directory)
             if new_dir:
                 self.working_directory = new_dir
-        elif choice == "6":
+        elif choice == "5":
             self.operations.translate_single_file(self.working_directory)
-        elif choice == "7":
+        elif choice == "6":
             self.operations.show_available_languages()
-        elif choice == "8":
+        elif choice == "7":
             self.operations.adjust_subtitle_timing(self.working_directory)
-        elif choice == "9":
+        elif choice == "8":
             self.operations.compare_srt_files(self.working_directory)
-        elif choice == "10":
+        elif choice == "9":
             self.operations.manage_translation_cache()
+        elif choice == "10":
+            self.show_environment_variables()
+        elif choice == "11":
+            exit_confirmation = self.input_handler.confirm_exit()
+            if exit_confirmation:
+                success_message = "Thank you for using Video File Organizer!"
+                self.console.print("[green]%s[/green]" % success_message)
+                return True  # Signal to exit
+            return False  # Continue running
 
     def run(self):
         """Main application loop."""
@@ -90,14 +165,17 @@ class ExtendedVideoOrganizerTUI:
                 exit_confirmation = self.input_handler.confirm_exit()
                 if exit_confirmation:
                     success_message = "Thank you for using Video File Organizer!"
-                    success_panel = Panel(success_message, style="green")
-                    self.console.print(success_panel)
+                    self.console.print("[green]%s[/green]" % success_message)
                     break
                 else:
                     continue
 
             self.clear_screen()
-            self.handle_menu_choice(choice)
+            should_exit = self.handle_menu_choice(choice)
+
+            # If handle_menu_choice returns True, it means we should exit
+            if should_exit:
+                break
 
             if choice != "11":
                 self.input_handler.wait_for_continue()

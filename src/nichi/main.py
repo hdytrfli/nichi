@@ -42,13 +42,13 @@ def main():
         nichi                    # Use current directory
         nichi /path/to/videos    # Use specific directory
         nichi ~/Downloads        # Use home directory path
-        
+
         Features:
         • Convert VTT files to SRT format
-        • Organize MP4 and subtitle files into folders  
+        • Organize MP4 and subtitle files into folders
         • Translate SRT files using Google Gemini AI
         • Support for 16+ languages
-        
+
         For translation setup: https://makersuite.google.com/app/apikey
         """,
     )

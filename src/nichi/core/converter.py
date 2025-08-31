@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from nichi.constants import EXT_VTT, EXT_EN_SRT
+
 
 class VTTToSRTConverter:
     """Converter class for WebVTT to SRT subtitle format conversion."""
@@ -137,7 +139,7 @@ class VTTToSRTConverter:
         for start_time, end_time, subtitle_text in cues:
             index_line = str(cue_index)
             srt_lines.append(index_line)
-            
+
             time_line = "%s --> %s" % (start_time, end_time)
             srt_lines.append(time_line)
 
@@ -196,7 +198,7 @@ class VTTToSRTConverter:
         all_files = os.listdir(directory_path)
         vtt_files = []
         for filename in all_files:
-            if filename.lower().endswith(".vtt"):
+            if filename.lower().endswith(EXT_VTT):
                 vtt_files.append(filename)
 
         converted_files: List[Tuple[str, int]] = []
@@ -205,7 +207,7 @@ class VTTToSRTConverter:
             file_parts = os.path.splitext(vtt_filename)
             base_name = file_parts[0]
             source_path = os.path.join(directory_path, vtt_filename)
-            destination_filename = "%s.en.srt" % base_name
+            destination_filename = "%s%s" % (base_name, EXT_EN_SRT)
             destination_path = os.path.join(output_directory, destination_filename)
 
             path_exists = os.path.exists(destination_path)

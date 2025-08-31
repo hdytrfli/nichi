@@ -178,8 +178,6 @@ class SRTTimingAdjuster:
             # Import here to avoid circular imports
             from nichi.core.parser import SRTParser
 
-            input_file = Path(input_path)
-
             # Generate backup filename that won't conflict with media servers
             backup_path = SRTTimingAdjuster.get_backup_filename(input_path)
 

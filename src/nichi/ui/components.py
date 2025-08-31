@@ -10,6 +10,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from nichi.constants import EXT_MP4, EXT_SRT, EXT_VTT, EXT_EN_SRT
 from nichi.models import TranslationResult
 
 
@@ -32,14 +33,14 @@ class UIComponents:
         menu_items = [
             "[bold green]1.[/] Convert VTT files to SRT format",
             "[bold green]2.[/] Organize MP4 and subtitle files into folders",
-            "[bold green]3.[/] Convert VTT files and then organize",
-            "[bold green]4.[/] Show current directory contents",
-            "[bold green]5.[/] Change working directory",
-            "[bold cyan]6.[/] Translate SRT file to another language",
-            "[bold cyan]7.[/] Show available languages for translation",
-            "[bold cyan]8.[/] Adjust subtitle timing",
-            "[bold cyan]9.[/] Compare two Subtitle files",
-            "[bold magenta]10.[/] Manage translation cache",
+            "[bold green]3.[/] Show current directory contents",
+            "[bold green]4.[/] Change working directory",
+            "[bold cyan]5.[/] Translate SRT file to another language",
+            "[bold cyan]6.[/] Show available languages for translation",
+            "[bold cyan]7.[/] Adjust subtitle timing",
+            "[bold cyan]8.[/] Compare two Subtitle files",
+            "[bold magenta]9.[/] Manage translation cache",
+            "[bold magenta]10.[/] Show environment variables",
             "[bold red]11.[/] Exit",
         ]
         menu_text = "\n".join(menu_items)
@@ -60,15 +61,15 @@ class UIComponents:
             vtt_files = []
             srt_files = []
             folders = []
-            
+
             for item in items:
-                if item.lower().endswith(".mp4"):
+                if item.lower().endswith(EXT_MP4):
                     video_files.append(item)
-                elif item.lower().endswith(".vtt"):
+                elif item.lower().endswith(EXT_VTT):
                     vtt_files.append(item)
-                elif item.lower().endswith(".srt"):
+                elif item.lower().endswith(EXT_SRT):
                     srt_files.append(item)
-                
+
                 item_path = os.path.join(working_directory, item)
                 if os.path.isdir(item_path):
                     folders.append(item)
@@ -79,8 +80,8 @@ class UIComponents:
             if video_files:
                 video_count = len(video_files)
                 title_text = "MP4 Files (%d)" % video_count
-                video_table = Table(title=title_text, show_header=False)
-                video_table.add_column("Filename", style="cyan")
+                video_table = Table(title=title_text)
+                video_table.add_column("Filename", style="cyan", width=50)
                 sorted_videos = sorted(video_files)
                 for video_file in sorted_videos:
                     video_table.add_row(video_file)
@@ -89,8 +90,8 @@ class UIComponents:
             if vtt_files:
                 vtt_count = len(vtt_files)
                 title_text = "VTT Files (%d)" % vtt_count
-                vtt_table = Table(title=title_text, show_header=False)
-                vtt_table.add_column("Filename", style="yellow")
+                vtt_table = Table(title=title_text)
+                vtt_table.add_column("Filename", style="yellow", width=50)
                 sorted_vtt = sorted(vtt_files)
                 for vtt_file in sorted_vtt:
                     vtt_table.add_row(vtt_file)
@@ -99,8 +100,8 @@ class UIComponents:
             if srt_files:
                 srt_count = len(srt_files)
                 title_text = "SRT Files (%d)" % srt_count
-                srt_table = Table(title=title_text, show_header=False)
-                srt_table.add_column("Filename", style="green")
+                srt_table = Table(title=title_text)
+                srt_table.add_column("Filename", style="green", width=50)
                 sorted_srt = sorted(srt_files)
                 for srt_file in sorted_srt:
                     srt_table.add_row(srt_file)
@@ -109,8 +110,8 @@ class UIComponents:
             if folders:
                 folder_count = len(folders)
                 title_text = "Folders (%d)" % folder_count
-                folder_table = Table(title=title_text, show_header=False)
-                folder_table.add_column("Folder Name", style="blue")
+                folder_table = Table(title=title_text)
+                folder_table.add_column("Folder Name", style="blue", width=50)
                 sorted_folders = sorted(folders)
                 for folder in sorted_folders:
                     folder_table.add_row(folder)
@@ -132,8 +133,8 @@ class UIComponents:
     def show_file_selection_table(self, files: List[str], title: str) -> Table:
         """Create a table for file selection."""
         table = Table(title=title)
-        table.add_column("Index", style="cyan", width=8)
-        table.add_column("Filename", style="green")
+        table.add_column("Index", style="cyan", width=12)
+        table.add_column("Filename", style="green", width=40)
 
         file_enumeration = enumerate(files, 1)
         for i, filename in file_enumeration:
@@ -145,9 +146,9 @@ class UIComponents:
     def show_languages_table(self, languages: Dict[str, str], default_lang: str) -> Table:
         """Create a table showing available languages."""
         table = Table(title="Available Languages")
-        table.add_column("Code", style="cyan", width=8)
-        table.add_column("Language", style="green")
-        table.add_column("Default", style="yellow", width=10)
+        table.add_column("Code", style="cyan", width=12)
+        table.add_column("Language", style="green", width=30)
+        table.add_column("Default", style="yellow", width=12)
 
         sorted_languages = sorted(languages.items())
         for code, name in sorted_languages:
@@ -159,13 +160,13 @@ class UIComponents:
     def show_cache_info_table(self, cache_info: dict) -> Table:
         """Create a table showing translation cache information."""
         table = Table(title="Translation Cache Information")
-        table.add_column("Property", style="cyan")
-        table.add_column("Value", style="green")
+        table.add_column("Property", style="cyan", width=25)
+        table.add_column("Value", style="green", width=30)
 
         table.add_row("Cache Directory", cache_info["cache_dir"])
         file_count = str(cache_info["files"])
         table.add_row("Cache Files", file_count)
-        size_mb = cache_info['size_mb']
+        size_mb = cache_info["size_mb"]
         size_text = "%s MB" % size_mb
         table.add_row("Total Size", size_text)
 
@@ -185,14 +186,14 @@ class UIComponents:
     def show_cache_clear_results(self, message: str, cache_info: dict) -> Table:
         """Create a table showing cache clear results."""
         table = Table(title="Cache Clear Results")
-        table.add_column("Property", style="cyan")
-        table.add_column("Value", style="green")
+        table.add_column("Property", style="cyan", width=25)
+        table.add_column("Value", style="green", width=30)
 
         table.add_row("Operation", "Cache Clear")
         table.add_row("Result", message)
         remaining_files = str(cache_info["files"])
         table.add_row("Remaining Files", remaining_files)
-        size_mb = cache_info['size_mb']
+        size_mb = cache_info["size_mb"]
         size_text = "%s MB" % size_mb
         table.add_row("Remaining Size", size_text)
 
@@ -201,8 +202,8 @@ class UIComponents:
     def show_translation_results(self, result: TranslationResult) -> Table:
         """Create a table showing translation results."""
         table = Table(title="Translation Complete")
-        table.add_column("Property", style="cyan")
-        table.add_column("Value", style="green")
+        table.add_column("Property", style="cyan", width=25)
+        table.add_column("Value", style="green", width=30)
 
         table.add_row("Input File", result.input_file)
         table.add_row("Output File", result.output_file)
@@ -221,10 +222,10 @@ class UIComponents:
         """Create a table showing batch translation results."""
         title_text = "Batch Translation Results (Target: %s)" % target_lang
         table = Table(title=title_text)
-        table.add_column("Input File", style="cyan")
-        table.add_column("Output File", style="green")
-        table.add_column("Status", style="yellow")
-        table.add_column("Entries", style="blue", justify="right")
+        table.add_column("Input File", style="cyan", width=30)
+        table.add_column("Output File", style="green", width=30)
+        table.add_column("Status", style="yellow", width=15)
+        table.add_column("Entries", style="blue", justify="right", width=10)
 
         # Add successful translations
         for result in successful:
@@ -249,8 +250,8 @@ class UIComponents:
     ) -> Table:
         """Create a table showing timing adjustment results."""
         table = Table(title="Timing Adjustment Complete")
-        table.add_column("Property", style="cyan")
-        table.add_column("Value", style="green")
+        table.add_column("Property", style="cyan", width=25)
+        table.add_column("Value", style="green", width=30)
 
         offset_seconds = offset_ms / 1000
         if offset_ms > 0:
@@ -276,14 +277,14 @@ class UIComponents:
         file_count = len(converted_files)
         title_text = "Conversion Results (%d files)" % file_count
         table = Table(title=title_text)
-        table.add_column("Source File", style="yellow")
-        table.add_column("Output File", style="green")
-        table.add_column("Cues", style="cyan", justify="right")
+        table.add_column("Source File", style="yellow", width=30)
+        table.add_column("Output File", style="green", width=30)
+        table.add_column("Cues", style="cyan", justify="right", width=10)
 
         for filename, cue_count in converted_files:
             file_parts = os.path.splitext(filename)
             base_name = file_parts[0]
-            output_name = "%s.en.srt" % base_name
+            output_name = "%s%s" % (base_name, EXT_EN_SRT)
             cue_text = str(cue_count)
             table.add_row(filename, output_name, cue_text)
 
@@ -294,7 +295,7 @@ class UIComponents:
         folder_count = len(created_folders)
         title_text = "Created Folders (%d)" % folder_count
         table = Table(title=title_text)
-        table.add_column("Folder Name", style="blue")
+        table.add_column("Folder Name", style="blue", width=50)
 
         for folder_name in created_folders:
             table.add_row(folder_name)

@@ -87,16 +87,12 @@ class FileOperations:
         srt_files = self.get_srt_files(working_directory)
         file_count = len(srt_files)
         if file_count < 2:
-            message = "Need at least 2 SRT files to compare"
-            warning_panel = Panel(message, style="yellow")
-            self.console.print(warning_panel)
+            self.console.print("[yellow]Need at least 2 SRT files to compare[/yellow]")
             return
 
         git_available = shutil.which("git")
         if not git_available:
-            error_message = "Git is not available. Please install git to use diff functionality."
-            error_panel = Panel(error_message, style="red")
-            self.console.print(error_panel)
+            self.console.print("[red]Git is not available. Please install git to use diff functionality.[/red]")
             return
 
         # Show file selection table only once at the beginning
@@ -114,23 +110,21 @@ class FileOperations:
         first_path = os.path.join(working_directory, first_file)
         second_path = os.path.join(working_directory, second_file)
 
-        bold_message = "[bold blue]Opening diff with git difftool...[/bold blue]"
-        self.console.print(bold_message)
+        self.console.print("[bold blue]Opening diff with git difftool...[/bold blue]")
 
         success = self._run_git_diff(first_path, second_path)
 
         if not success:
-            error_message = "Failed to run git difftool. Make sure git is properly configured with a diff tool."
-            error_panel = Panel(error_message, style="red")
-            self.console.print(error_panel)
+            error_message = (
+                "[red]Failed to run git difftool. Make sure git is properly " "configured with a diff tool.[/red]"
+            )
+            self.console.print(error_message)
 
     def adjust_subtitle_timing(self, working_directory: str):
         """Handle subtitle timing adjustment with backup to .old file."""
         srt_files = self.get_srt_files(working_directory)
         if not srt_files:
-            warning_message = "No SRT files found in directory"
-            warning_panel = Panel(warning_message, style="yellow")
-            self.console.print(warning_panel)
+            self.console.print("[yellow]No SRT files found in directory[/yellow]")
             return
 
         # Show file selection table
@@ -145,9 +139,7 @@ class FileOperations:
         # Get timing offset
         offset_ms = self.input_handler.prompt_for_timing_offset()
         if offset_ms is None:
-            cancel_message = "Timing adjustment cancelled"
-            cancel_panel = Panel(cancel_message, style="yellow")
-            self.console.print(cancel_panel)
+            self.console.print("[yellow]Timing adjustment cancelled[/yellow]")
             return
 
         # Perform timing adjustment
@@ -159,12 +151,10 @@ class FileOperations:
             TextColumn(progress_description),
             console=self.console,
         ) as progress:
-            task = progress.add_task("Adjusting subtitle timing...", total=None)
+            progress.add_task("Adjusting subtitle timing...", total=None)
 
             try:
-                adjustment_result = self.timing_adjuster.adjust_srt_file_with_backup(
-                    input_path, offset_ms
-                )
+                adjustment_result = self.timing_adjuster.adjust_srt_file_with_backup(input_path, offset_ms)
                 success, message, entries_processed, backup_filename = adjustment_result
 
                 if success:
@@ -177,20 +167,15 @@ class FileOperations:
                         offset_ms,
                     )
                     self.console.print(result_table)
-                    
-                    panel_message = "Timing adjustment completed: %s\nOriginal backed up as: %s" % (message, backup_filename)
-                    success_panel = Panel(panel_message, style="green")
-                    self.console.print(success_panel)
+
+                    self.console.print("[green]Timing adjustment completed: %s[/green]" % message)
+                    self.console.print("[green]Original backed up as: %s[/green]" % backup_filename)
                 else:
-                    error_message = "Timing adjustment failed: %s" % message
-                    error_panel = Panel(error_message, style="red")
-                    self.console.print(error_panel)
+                    self.console.print("[red]Timing adjustment failed: %s[/red]" % message)
 
             except Exception as error:
                 progress.stop()
-                error_message = "Timing adjustment failed: %s" % error
-                error_panel = Panel(error_message, style="red")
-                self.console.print(error_panel)
+                self.console.print("[red]Timing adjustment failed: %s[/red]" % error)
 
     def convert_vtt_files(self, working_directory: str):
         """Handle VTT to SRT conversion."""
@@ -200,20 +185,16 @@ class FileOperations:
             TextColumn(progress_description),
             console=self.console,
         ) as progress:
-            task = progress.add_task("Converting VTT files...", total=None)
+            progress.add_task("Converting VTT files...", total=None)
 
             try:
                 converted_files = self.converter.convert_directory(working_directory)
             except Exception as error:
-                error_message = "Error during conversion: %s" % error
-                error_panel = Panel(error_message, style="red")
-                self.console.print(error_panel)
+                self.console.print("[red]Error during conversion: %s[/red]" % error)
                 return
 
         if not converted_files:
-            warning_message = "No VTT files found or all already converted"
-            warning_panel = Panel(warning_message, style="yellow")
-            self.console.print(warning_panel)
+            self.console.print("[yellow]No VTT files found or all already converted[/yellow]")
         else:
             result_table = self.ui.show_conversion_results(converted_files)
             self.console.print(result_table)
@@ -226,32 +207,16 @@ class FileOperations:
             TextColumn(progress_description),
             console=self.console,
         ) as progress:
-            task = progress.add_task("Organizing files...", total=None)
+            progress.add_task("Organizing files...", total=None)
 
             try:
                 results = self.organizer.organize_directory(working_directory)
             except Exception as error:
-                error_message = "Error during organization: %s" % error
-                error_panel = Panel(error_message, style="red")
-                self.console.print(error_panel)
+                self.console.print("[red]Error during organization: %s[/red]" % error)
                 return
 
         if not results.created_folders:
-            warning_message = "No files to organize or folders already exist"
-            warning_panel = Panel(warning_message, style="yellow")
-            self.console.print(warning_panel)
+            self.console.print("[yellow]No files to organize or folders already exist[/yellow]")
         else:
             folder_table = self.ui.show_organization_results(results.created_folders)
             self.console.print(folder_table)
-
-    def convert_and_organize(self, working_directory: str):
-        """Handle conversion followed by organization."""
-        step1_message = "Step 1: Converting VTT files"
-        step1_panel = Panel(step1_message, style="blue")
-        self.console.print(step1_panel)
-        self.convert_vtt_files(working_directory)
-
-        step2_message = "Step 2: Organizing files"
-        step2_panel = Panel(step2_message, style="blue")
-        self.console.print(step2_panel)
-        self.organize_files(working_directory)

@@ -110,15 +110,25 @@ python src/main.py
 
 # Or if installed as package
 nichi
+
+# Show environment variables
+python src/main.py --env
 ```
 
 ### Menu Options
 
-1. **Organize files by language** - Sort video files by detected language
-2. **Convert VTT to SRT** - Convert WebVTT subtitle files to SRT format
-3. **Translate SRT file** - Translate a single SRT file to another language
-4. **Translate directory** - Batch translate all SRT files in a directory
-5. **Show supported languages** - Display available language codes
+1. **Convert VTT files to SRT format** - Convert WebVTT subtitle files to SRT format
+2. **Organize MP4 and subtitle files into folders** - Group video files with their corresponding subtitle files
+3. **Convert VTT files and then organize** - Perform both conversion and organization in sequence
+4. **Show current directory contents** - Display the files in the current working directory
+5. **Change working directory** - Navigate to a different directory
+6. **Translate SRT file to another language** - Translate a single SRT file using Google Gemini AI
+7. **Show available languages for translation** - Display all supported languages for translation
+8. **Adjust subtitle timing** - Shift subtitle timing forward or backward
+9. **Compare two Subtitle files** - Use git difftool to compare two SRT files
+10. **Manage translation cache** - View and clear the translation cache
+11. **Show environment variables** - Display relevant environment variables
+12. **Exit** - Close the application
 
 ### Translation Features
 

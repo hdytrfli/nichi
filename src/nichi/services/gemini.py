@@ -75,9 +75,7 @@ class GeminiTranslator:
 
         async def translate_single_batch_safe(texts):
             async with semaphore:
-                translation_result = await self.core.translate_batch_with_retry(
-                    texts, target_language, source_language
-                )
+                translation_result = await self.core.translate_batch_with_retry(texts, target_language, source_language)
                 return translation_result
 
         # Process all batches concurrently
@@ -123,9 +121,7 @@ class GeminiTranslator:
 
         async def translate_all_batches():
             # Use concurrent processing instead of sequential
-            translation_results = await self.translate_batches_concurrent(
-                batches, target_language, source_language
-            )
+            translation_results = await self.translate_batches_concurrent(batches, target_language, source_language)
             translated_batch_results, success_flags, error_messages = translation_results
 
             # Process results

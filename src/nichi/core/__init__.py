@@ -3,7 +3,6 @@
 from .operations import Operations
 from .converter import VTTToSRTConverter
 from .organizer import FileOrganizer
-from .operations import Operations
 from .parser import SRTParser
 from .timing import SRTTimingAdjuster
 from .translator import SRTTranslator

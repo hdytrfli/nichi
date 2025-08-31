@@ -1,15 +1,15 @@
-"""Google Gemini translation service cache management."""
+"""Translation cache management for the video organizer."""
 
 import json
 from pathlib import Path
 
-from nichi.config import config
+from nichi.constants import CONFIG_DIR, CACHE_DIR
 
 
 def get_cache_directory() -> Path:
     """Get the cache directory path."""
     home_path = Path.home()
-    cache_path = home_path / ".config" / "nichi" / "cache"
+    cache_path = home_path / CONFIG_DIR / CACHE_DIR
     cache_path.mkdir(parents=True, exist_ok=True)
     return cache_path
 
@@ -102,8 +102,8 @@ def clear_cache() -> tuple[bool, str, dict]:
             cache_file.unlink()
 
         cache_info_after = get_cache_info()
-        cleared_count = cache_info_before['files']
-        cleared_size = cache_info_before['size_mb']
+        cleared_count = cache_info_before["files"]
+        cleared_size = cache_info_before["size_mb"]
         message = "Cleared %d cache files (%.1f MB)" % (cleared_count, cleared_size)
         return True, message, cache_info_after
 

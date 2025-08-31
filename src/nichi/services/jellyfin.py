@@ -88,7 +88,7 @@ class JellyfinParser:
         name_value = parsed["name"]
         if name_value:
             parts.append(name_value)
-            
+
         track_value = parsed["track"]
         if track_value:
             parts.append(track_value)

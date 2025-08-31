@@ -6,6 +6,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
+from nichi.constants import CONFIG_PATH_TEMPLATE
 from nichi.exceptions import ConfigurationError
 
 
@@ -18,59 +19,40 @@ class ConfigManager:
 
     def _load_environment(self) -> bool:
         """
-        Load environment variables in order of precedence:
-        1. Current working directory .env
-        2. User home directory .env
-        3. System environment variables only
+        Load environment variables from the standardized config path.
+
+        Configuration loading order:
+        1. ~/.config/nichi/.env (standardized location)
+        2. System environment variables only
 
         Returns:
             True if .env file was found and loaded, False otherwise
         """
-        # Try current working directory first
-        current_dir = Path.cwd()
-        cwd_env = current_dir / ".env"
-        cwd_exists = cwd_env.exists()
-        if cwd_exists:
-            load_dotenv(cwd_env)
+        # Try standardized config directory only
+        expanded_path = os.path.expanduser(CONFIG_PATH_TEMPLATE)
+        config_path = Path(expanded_path)
+        path_exists = config_path.exists()
+        if path_exists:
+            load_dotenv(config_path)
             return True
-
-        # Try user home directory
-        home_dir = Path.home()
-        home_env = home_dir / ".env"
-        home_exists = home_env.exists()
-        if home_exists:
-            load_dotenv(home_env)
-            return True
-
-        # Try common config directories
-        config_locations = [
-            home_dir / ".config" / "nichi" / ".env",
-            Path("/etc/nichi/.env"),  # Linux system-wide
-        ]
-
-        for config_path in config_locations:
-            path_exists = config_path.exists()
-            if path_exists:
-                load_dotenv(config_path)
-                return True
 
         # Fall back to system environment variables only
         return False
 
     def get_api_key(self) -> str:
         """Get Google AI API key from environment."""
-        api_key = os.getenv("GOOGLE_AI_API_KEY")
+        from nichi.constants import ENV_GOOGLE_AI_API_KEY
+
+        api_key = os.getenv(ENV_GOOGLE_AI_API_KEY)
         if not api_key:
             error_message = (
-                "GOOGLE_AI_API_KEY not found. Please set it in:\n"
-                "1. Current directory .env file\n"
-                "2. Home directory ~/.env file\n"
-                "3. System environment variables\n"
-                "4. ~/.config/nichi/.env file"
+                f"{ENV_GOOGLE_AI_API_KEY} not found. Please set it in:\n"
+                f"1. {CONFIG_PATH_TEMPLATE}\n"
+                "2. System environment variables\n"
             )
             raise ConfigurationError(
                 error_message,
-                "GOOGLE_AI_API_KEY",
+                ENV_GOOGLE_AI_API_KEY,
             )
         return api_key
 

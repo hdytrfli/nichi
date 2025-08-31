@@ -1,6 +1,6 @@
 """Video File Organizer with AI Translation."""
 
-__version__ = "2.0.5"
+__version__ = "2.0.6"
 __author__ = "Rafli"
 __email__ = "hidayattul.rafli@gmail.com"
 __url__ = "https://github.com/hdytrfli/nichi"

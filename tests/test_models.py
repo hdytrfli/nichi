@@ -1,13 +1,13 @@
 """Test suite for the models module."""
 
 from nichi.models import (
-    SRTEntry,
-    TranslationResult,
-    FileProcessingResult,
     CacheInfo,
-    TimingAdjustmentResult,
+    FileProcessingResult,
     Language,
+    SRTEntry,
+    TimingAdjustmentResult,
     TranslationProgress,
+    TranslationResult,
 )
 
 

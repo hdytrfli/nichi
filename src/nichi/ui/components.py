@@ -10,7 +10,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from nichi.constants import EXT_MP4, EXT_SRT, EXT_VTT, EXT_EN_SRT
+from nichi.constants import EXT_EN_SRT, EXT_MP4, EXT_SRT, EXT_VTT
 from nichi.models import TranslationResult
 
 

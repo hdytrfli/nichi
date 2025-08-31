@@ -1,15 +1,16 @@
 """Test suite for the utils module."""
 
-from nichi.utils.helpers import (
-    get_files_by_extension,
-    create_directory_if_not_exists,
-    get_file_extension,
-    get_file_basename,
-    is_video_file,
-    is_subtitle_file,
-)
 import os
 import tempfile
+
+from nichi.utils.helpers import (
+    create_directory_if_not_exists,
+    get_file_basename,
+    get_file_extension,
+    get_files_by_extension,
+    is_subtitle_file,
+    is_video_file,
+)
 
 
 def test_file_extension_functions():

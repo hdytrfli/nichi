@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import List
 
-from nichi.constants import VIDEO_EXTENSIONS, SUBTITLE_EXTENSIONS
+from nichi.constants import SUBTITLE_EXTENSIONS, VIDEO_EXTENSIONS
 
 
 def get_files_by_extension(directory: str, extensions: List[str]) -> List[str]:

@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from nichi.constants import EXT_VTT, EXT_EN_SRT
+from nichi.constants import EXT_EN_SRT, EXT_VTT
 
 
 class VTTToSRTConverter:

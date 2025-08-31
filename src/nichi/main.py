@@ -7,6 +7,7 @@ Simplified version with Google Gemini translation capabilities.
 import argparse
 import os
 import sys
+
 from nichi import __version__
 from nichi.ui.tui import ExtendedVideoOrganizerTUI
 

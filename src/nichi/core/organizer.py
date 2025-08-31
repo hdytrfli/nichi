@@ -3,7 +3,7 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from nichi.constants import EXT_MP4, EXT_SRT
 from nichi.models import FileProcessingResult
@@ -89,7 +89,7 @@ class FileOrganizer:
         """
         video_parts = os.path.splitext(video_filename)
         video_base_name = video_parts[0]
-        
+
         matching_subtitles = []
         for subtitle_file in subtitle_files:
             subtitle_base_name = self.extract_base_name(subtitle_file)

@@ -80,22 +80,18 @@ def test_find_subtitle_files():
 def test_multiple_subtitles_per_video():
     """Test that the organizer can handle multiple subtitles for the same video."""
     organizer = FileOrganizer()
-    
+
     # Test matching multiple subtitles to one video
-    subtitle_files = [
-        "movie.eng.srt",
-        "movie.ind.srt", 
-        "movie.eng.sdh.srt"
-    ]
-    
+    subtitle_files = ["movie.eng.srt", "movie.ind.srt", "movie.eng.sdh.srt"]
+
     matched_subtitles = organizer.match_subtitle_to_video("movie.mp4", subtitle_files)
     assert len(matched_subtitles) == 3, "Should match all three subtitles to movie.mp4"
-    
+
     # All should have the same base name "movie"
     for subtitle in matched_subtitles:
         base_name = organizer.extract_base_name(subtitle)
         assert base_name == "movie", f"Subtitle {subtitle} should have base name 'movie'"
-        
+
     print("Multiple subtitles per video test passed!")
 
 

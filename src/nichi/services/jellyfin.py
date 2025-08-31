@@ -46,7 +46,7 @@ class JellyfinParser:
             result["language"] = parts[1]
 
         elif part_count == 3:
-            # name.track.language.srt OR name.language.modifier.srt
+            # Check if the third part is a modifier
             third_part = parts[2]
             if third_part in JellyfinParser.MODIFIERS:
                 # name.language.modifier.srt
@@ -59,23 +59,38 @@ class JellyfinParser:
                 result["track"] = parts[1]
                 result["language"] = third_part
 
-        elif part_count == 4:
-            # name.track.language.modifier.srt
-            result["name"] = parts[0]
-            result["track"] = parts[1]
-            result["language"] = parts[2]
-            result["modifier"] = parts[3]
-
-        elif part_count >= 5:
-            # name.extra.track.language.modifier.srt (language is 3rd from last)
-            language_index = part_count - 3
-            name_end_index = language_index - 1
-            name_parts = parts[:name_end_index]
-            result["name"] = ".".join(name_parts)
-            result["track"] = parts[name_end_index]
-            result["language"] = parts[language_index]
-            modifier_index = language_index + 1
-            result["modifier"] = parts[modifier_index]
+        elif part_count >= 4:
+            # For complex cases, we need to identify the language position
+            # Language is typically the part before the last modifier
+            # or second to last part if there's a modifier
+            
+            # Check if the last part is a modifier
+            last_part = parts[-1]
+            if last_part in JellyfinParser.MODIFIERS:
+                # Has modifier
+                result["modifier"] = last_part
+                # Language is the part before modifier
+                language_index = part_count - 2
+                result["language"] = parts[language_index]
+                # Track is the part before language if there's a track
+                if language_index >= 2:
+                    result["track"] = parts[language_index - 1]
+                    # Name is everything before track
+                    result["name"] = ".".join(parts[:language_index - 1])
+                else:
+                    # No track, name is everything before language
+                    result["name"] = ".".join(parts[:language_index])
+            else:
+                # No modifier, language is the last part
+                result["language"] = last_part
+                # Track is the part before language if there's a track
+                if part_count >= 3:
+                    result["track"] = parts[part_count - 2]
+                    # Name is everything before track
+                    result["name"] = ".".join(parts[:part_count - 2])
+                else:
+                    # No track, name is everything before language
+                    result["name"] = ".".join(parts[:part_count - 1])
 
         return result
 

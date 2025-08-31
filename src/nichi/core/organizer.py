@@ -76,28 +76,29 @@ class FileOrganizer:
             base_name = file_parts[0]
             return base_name
 
-    def match_subtitle_to_video(self, video_filename: str, subtitle_files: List[str]) -> Optional[str]:
+    def match_subtitle_to_video(self, video_filename: str, subtitle_files: List[str]) -> List[str]:
         """
-        Find matching subtitle file for a video file.
+        Find matching subtitle files for a video file.
 
         Args:
             video_filename: Name of the video file
             subtitle_files: List of available subtitle files
 
         Returns:
-            Matching subtitle filename or None if not found
+            List of matching subtitle filenames
         """
         video_parts = os.path.splitext(video_filename)
         video_base_name = video_parts[0]
-
+        
+        matching_subtitles = []
         for subtitle_file in subtitle_files:
             subtitle_base_name = self.extract_base_name(subtitle_file)
             if subtitle_base_name == video_base_name:
-                return subtitle_file
+                matching_subtitles.append(subtitle_file)
 
-        return None
+        return matching_subtitles
 
-    def group_files(self, directory_path: str) -> Dict[str, Optional[str]]:
+    def group_files(self, directory_path: str) -> Dict[str, List[str]]:
         """
         Group MP4 files with their matching subtitle files.
 
@@ -105,20 +106,20 @@ class FileOrganizer:
             directory_path: Directory path to scan for files
 
         Returns:
-            Dictionary mapping MP4 filenames to their matching subtitle files (or None)
+            Dictionary mapping MP4 filenames to their matching subtitle files
         """
         video_files = self.find_video_files(directory_path)
         subtitle_files = self.find_subtitle_files(directory_path)
 
-        file_pairs: Dict[str, Optional[str]] = {}
+        file_pairs: Dict[str, List[str]] = {}
 
         for video_file in video_files:
-            matching_subtitle = self.match_subtitle_to_video(video_file, subtitle_files)
-            file_pairs[video_file] = matching_subtitle
+            matching_subtitles = self.match_subtitle_to_video(video_file, subtitle_files)
+            file_pairs[video_file] = matching_subtitles
 
         used_subtitles = set()
-        for subtitle in file_pairs.values():
-            if subtitle is not None:
+        for subtitles in file_pairs.values():
+            for subtitle in subtitles:
                 used_subtitles.add(subtitle)
 
         for subtitle_file in subtitle_files:
@@ -127,11 +128,13 @@ class FileOrganizer:
                 placeholder_video = "%s%s" % (subtitle_base_name, EXT_MP4)
 
                 if placeholder_video not in file_pairs:
-                    file_pairs[placeholder_video] = subtitle_file
+                    file_pairs[placeholder_video] = [subtitle_file]
+                else:
+                    file_pairs[placeholder_video].append(subtitle_file)
 
         return file_pairs
 
-    def create_folder_structure(self, directory_path: str, file_pairs: Dict[str, Optional[str]]) -> List[str]:
+    def create_folder_structure(self, directory_path: str, file_pairs: Dict[str, List[str]]) -> List[str]:
         """
         Create folder structure and move files into appropriate folders.
 
@@ -145,7 +148,7 @@ class FileOrganizer:
         created_folders: List[str] = []
 
         pair_items = file_pairs.items()
-        for video_filename, subtitle_filename in pair_items:
+        for video_filename, subtitle_filenames in pair_items:
             video_parts = os.path.splitext(video_filename)
             folder_base_name = video_parts[0]
             folder_path = os.path.join(directory_path, folder_base_name)
@@ -162,14 +165,15 @@ class FileOrganizer:
                 move_message = "Moved video: %s" % video_filename
                 self.processed_files.append(move_message)
 
-            if subtitle_filename:
-                subtitle_source_path = os.path.join(directory_path, subtitle_filename)
-                subtitle_exists = os.path.exists(subtitle_source_path)
-                if subtitle_exists:
-                    subtitle_destination_path = os.path.join(folder_path, subtitle_filename)
-                    shutil.move(subtitle_source_path, subtitle_destination_path)
-                    move_message = "Moved subtitle: %s" % subtitle_filename
-                    self.processed_files.append(move_message)
+            for subtitle_filename in subtitle_filenames:
+                if subtitle_filename:
+                    subtitle_source_path = os.path.join(directory_path, subtitle_filename)
+                    subtitle_exists = os.path.exists(subtitle_source_path)
+                    if subtitle_exists:
+                        subtitle_destination_path = os.path.join(folder_path, subtitle_filename)
+                        shutil.move(subtitle_source_path, subtitle_destination_path)
+                        move_message = "Moved subtitle: %s" % subtitle_filename
+                        self.processed_files.append(move_message)
 
         return created_folders
 

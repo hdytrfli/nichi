@@ -31,12 +31,12 @@ def test_jellyfin_naming_support():
         assert isinstance(base_name, str) and len(base_name) > 0, f"Base name extraction failed for {subtitle_filename}"
 
     # Test match_subtitle_to_video with matching names
-    matched_subtitle = organizer.match_subtitle_to_video("movie.mp4", ["movie.eng.srt"])
-    assert matched_subtitle == "movie.eng.srt", "Should match movie.mp4 with movie.eng.srt"
+    matched_subtitles = organizer.match_subtitle_to_video("movie.mp4", ["movie.eng.srt"])
+    assert matched_subtitles == ["movie.eng.srt"], "Should match movie.mp4 with movie.eng.srt"
 
     # Test match_subtitle_to_video with non-matching names
-    matched_subtitle = organizer.match_subtitle_to_video("movie.mp4", ["different.eng.srt"])
-    assert matched_subtitle is None, "Should not match movie.mp4 with different.eng.srt"
+    matched_subtitles = organizer.match_subtitle_to_video("movie.mp4", ["different.eng.srt"])
+    assert matched_subtitles == [], "Should not match movie.mp4 with different.eng.srt"
 
     print("Jellyfin naming convention tests passed!")
 
@@ -77,7 +77,30 @@ def test_find_subtitle_files():
         print("Subtitle file detection test passed!")
 
 
+def test_multiple_subtitles_per_video():
+    """Test that the organizer can handle multiple subtitles for the same video."""
+    organizer = FileOrganizer()
+    
+    # Test matching multiple subtitles to one video
+    subtitle_files = [
+        "movie.eng.srt",
+        "movie.ind.srt", 
+        "movie.eng.sdh.srt"
+    ]
+    
+    matched_subtitles = organizer.match_subtitle_to_video("movie.mp4", subtitle_files)
+    assert len(matched_subtitles) == 3, "Should match all three subtitles to movie.mp4"
+    
+    # All should have the same base name "movie"
+    for subtitle in matched_subtitles:
+        base_name = organizer.extract_base_name(subtitle)
+        assert base_name == "movie", f"Subtitle {subtitle} should have base name 'movie'"
+        
+    print("Multiple subtitles per video test passed!")
+
+
 if __name__ == "__main__":
     test_jellyfin_naming_support()
     test_find_subtitle_files()
+    test_multiple_subtitles_per_video()
     print("All tests passed!")

@@ -6,14 +6,12 @@ def load_requirements():
     requirements_file = Path(__file__).parent / "requirements.txt"
     if requirements_file.exists():
         with open(requirements_file, "r", encoding="utf-8") as f:
-            return [
-                line.strip() for line in f if line.strip() and not line.startswith("#")
-            ]
+            return [line.strip() for line in f if line.strip() and not line.startswith("#")]
     return []
 
 
 def load_readme():
-    readme_file = Path(__file__).parent / "readme.md"
+    readme_file = Path(__file__).parent / "README.md"
     if readme_file.exists():
         with open(readme_file, "r", encoding="utf-8") as f:
             return f.read()
@@ -28,7 +26,7 @@ setup(
     install_requires=load_requirements(),
     entry_points={
         "console_scripts": [
-            "nichi=main:main",
+            "nichi=nichi.main:main",
         ],
     },
     python_requires=">=3.8",

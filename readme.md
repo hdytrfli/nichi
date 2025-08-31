@@ -24,27 +24,41 @@ A simple TUI video file organizer with Google Gemini AI-powered translation capa
 
 ```
 .
-|-- LICENSE
-|-- readme.md
-|-- requirements.txt
-|-- setup.py
-`-- src
-    |-- __init__.py
-    |-- main.py
-    `-- nichi
-        |-- __init__.py
-        |-- converter.py
-        |-- env_loader.py
-        |-- gemini_translator.py
-        |-- jellyfin_parser.py
-        |-- operations.py
-        |-- organizer.py
-        |-- srt_parser.py
-        |-- timing_adjuster.py
-        |-- translator.py
-        |-- tui.py
-        |-- ui_components.py
-        `-- user_input.py
+├── LICENSE
+├── README.md
+├── requirements.txt
+├── requirements-dev.txt
+├── pyproject.toml
+├── setup.py
+└── src
+    ├── __init__.py
+    ├── main.py
+    └── nichi
+        ├── __init__.py
+        ├── config/
+        │   ├── __init__.py
+        │   └── config_manager.py
+        ├── core/
+        │   ├── __init__.py
+        │   ├── converter.py
+        │   ├── organizer.py
+        │   ├── operations.py
+        │   ├── srt_parser.py
+        │   ├── timing_adjuster.py
+        │   └── translator.py
+        ├── exceptions/
+        │   └── __init__.py
+        ├── models/
+        │   └── __init__.py
+        ├── services/
+        │   ├── __init__.py
+        │   ├── gemini_translator.py
+        │   └── jellyfin_parser.py
+        └── ui/
+            ├── __init__.py
+            ├── tui.py
+            ├── ui_components.py
+            └── user_input.py
 ```
 
 ## Installation
@@ -57,9 +71,9 @@ pip install -r requirements.txt
 
 Key dependencies:
 
-- `google-generativeai>=0.3.0` - Google Gemini AI SDK
-- `python-dotenv>=1.0.0` - Environment variable management
-- `rich>=13.0.0` - Beautiful terminal interface
+- `google-generativeai==0.3.0` - Google Gemini AI SDK
+- `python-dotenv==1.0.0` - Environment variable management
+- `rich==14.1.0` - Beautiful terminal interface
 
 ### 2. Set up Google AI API Key
 
@@ -183,3 +197,49 @@ If translation features are unavailable:
 - Add `.env` to your `.gitignore` file
 - API keys are only used for Google Gemini translation requests
 - No subtitle content is stored or logged
+
+## Development
+
+### Code Structure
+
+The project follows a clean architecture pattern:
+
+- `config/` - Configuration management
+- `core/` - Business logic and core functionality
+- `exceptions/` - Custom exception classes
+- `models/` - Data models and structures
+- `services/` - External service integrations
+- `ui/` - User interface components
+
+### Code Quality
+
+- Type hints for all functions and classes
+- Comprehensive docstrings for all public interfaces
+- Consistent naming conventions
+- Modular design with clear separation of concerns
+
+### Running Tests
+
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Run tests
+pytest
+
+# Run linting
+flake8 src/
+
+# Run type checking
+mypy src/
+```
+
+### Code Formatting
+
+```bash
+# Format code with black
+black src/
+
+# Sort imports with isort
+isort src/
+```

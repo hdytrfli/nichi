@@ -1,7 +1,4 @@
-"""
-Simplified Terminal User Interface
-Main controller that orchestrates UI components and operations including diff feature
-"""
+"""Main Terminal User Interface controller."""
 
 import os
 import sys
@@ -10,19 +7,16 @@ from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 
-sys.path.append(str(Path(__file__).parent.parent))
-
-from nichi.converter import VTTToSRTConverter
-from nichi.organizer import FileOrganizer
-from nichi.translator import SRTTranslator
-from nichi.timing_adjuster import SRTTimingAdjuster
-from .ui_components import UIComponents
-from .user_input import UserInput
-from .operations import Operations
+from nichi.core.converter import VTTToSRTConverter
+from nichi.core.organizer import FileOrganizer
+from nichi.core.timing import SRTTimingAdjuster
+from nichi.core.translator import SRTTranslator
+from nichi.ui.components import UIComponents
+from nichi.ui.input import UserInput
 
 
 class ExtendedVideoOrganizerTUI:
-    """Main TUI controller - simplified and modular with diff feature"""
+    """Main TUI controller - simplified and modular with diff feature."""
 
     def __init__(self, working_directory: str):
         self.working_directory = working_directory
@@ -37,6 +31,9 @@ class ExtendedVideoOrganizerTUI:
         # Initialize UI components
         self.ui = UIComponents(self.console)
         self.input_handler = UserInput(self.console)
+
+        # Import and initialize operations here to avoid circular import
+        from nichi.core.operations import Operations
         self.operations = Operations(
             self.converter,
             self.organizer,
@@ -46,11 +43,15 @@ class ExtendedVideoOrganizerTUI:
         )
 
     def clear_screen(self):
-        """Clear the console"""
-        os.system("cls" if os.name == "nt" else "clear")
+        """Clear the console."""
+        if os.name == "nt":
+            clear_command = "cls"
+        else:
+            clear_command = "clear"
+        os.system(clear_command)
 
     def handle_menu_choice(self, choice: str):
-        """Handle user menu selection"""
+        """Handle user menu selection."""
         if choice == "1":
             self.operations.convert_vtt_files(self.working_directory)
         elif choice == "2":
@@ -75,21 +76,22 @@ class ExtendedVideoOrganizerTUI:
             self.operations.manage_translation_cache()
 
     def run(self):
-        """Main application loop"""
+        """Main application loop."""
         while True:
             self.clear_screen()
-            self.console.print(self.ui.create_header(self.working_directory))
-            self.console.print(self.ui.create_menu())
+            header_panel = self.ui.create_header(self.working_directory)
+            self.console.print(header_panel)
+            menu_panel = self.ui.create_menu()
+            self.console.print(menu_panel)
 
             choice = self.input_handler.get_menu_choice()
 
             if choice == "11":
-                if self.input_handler.confirm_exit():
-                    self.console.print(
-                        Panel(
-                            "Thank you for using Video File Organizer!", style="green"
-                        )
-                    )
+                exit_confirmation = self.input_handler.confirm_exit()
+                if exit_confirmation:
+                    success_message = "Thank you for using Video File Organizer!"
+                    success_panel = Panel(success_message, style="green")
+                    self.console.print(success_panel)
                     break
                 else:
                     continue

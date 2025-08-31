@@ -1,25 +1,22 @@
-"""
-VTT to SRT converter module
-Handles conversion of WebVTT subtitle files to SRT format
-"""
+"""VTT to SRT converter module."""
 
 import os
-import re
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 
 class VTTToSRTConverter:
-    """Converter class for WebVTT to SRT subtitle format conversion"""
+    """Converter class for WebVTT to SRT subtitle format conversion."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the VTT to SRT converter."""
         self.cue_count = 0
 
     def format_timestamp(self, timestamp: str) -> str:
         """
-        Convert WebVTT timestamp to SRT format
+        Convert WebVTT timestamp to SRT format.
 
-        Parameters:
+        Args:
             timestamp: WebVTT timestamp string (e.g., '00:01:02.5', '01:02:03.456')
 
         Returns:
@@ -40,32 +37,38 @@ class VTTToSRTConverter:
             return "00:00:00,000"
 
         if "." in seconds_part:
-            seconds_string, milliseconds_string = seconds_part.split(".", 1)
+            split_result = seconds_part.split(".", 1)
+            seconds_string = split_result[0]
+            milliseconds_string = split_result[1]
             seconds = int(seconds_string)
-            milliseconds = int((milliseconds_string + "000")[:3])
+            padded_milliseconds = (milliseconds_string + "000")[:3]
+            milliseconds = int(padded_milliseconds)
         else:
             seconds = int(seconds_part)
             milliseconds = 0
 
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
+        formatted_time = "%02d:%02d:%02d,%03d" % (hours, minutes, seconds, milliseconds)
+        return formatted_time
 
     def parse_vtt_content(self, content: str) -> List[Tuple[str, str, str]]:
         """
-        Parse VTT content and extract cues
+        Parse VTT content and extract cues.
 
-        Parameters:
+        Args:
             content: Raw VTT file content
 
         Returns:
             List of tuples containing (start_time, end_time, text)
         """
-        normalized_content = content.replace("\r\n", "\n").replace("\r", "\n")
+        content_with_lf = content.replace("\r\n", "\n")
+        normalized_content = content_with_lf.replace("\r", "\n")
         lines = normalized_content.split("\n")
 
-        cues = []
+        cues: List[Tuple[str, str, str]] = []
         line_pointer = 0
 
         while line_pointer < len(lines):
+            # Skip empty lines
             while line_pointer < len(lines) and lines[line_pointer].strip() == "":
                 line_pointer += 1
 
@@ -78,7 +81,8 @@ class VTTToSRTConverter:
                 line_pointer += 1
                 continue
 
-            if current_line.startswith(("NOTE", "STYLE", "REGION")):
+            note_styles = ("NOTE", "STYLE", "REGION")
+            if current_line.startswith(note_styles):
                 line_pointer += 1
                 while line_pointer < len(lines) and lines[line_pointer].strip() != "":
                     line_pointer += 1
@@ -98,7 +102,8 @@ class VTTToSRTConverter:
                 timestamp_parts = timestamp_line.split("-->", 1)
                 start_raw = timestamp_parts[0].strip()
                 end_part = timestamp_parts[1].strip()
-                end_raw = end_part.split(" ", 1)[0].strip()
+                end_raw_parts = end_part.split(" ", 1)
+                end_raw = end_raw_parts[0].strip()
 
                 start_time = self.format_timestamp(start_raw)
                 end_time = self.format_timestamp(end_raw)
@@ -111,15 +116,16 @@ class VTTToSRTConverter:
                 text_lines.append(lines[line_pointer])
                 line_pointer += 1
 
-            cues.append((start_time, end_time, "\n".join(text_lines)))
+            joined_text = "\n".join(text_lines)
+            cues.append((start_time, end_time, joined_text))
 
         return cues
 
     def generate_srt_content(self, cues: List[Tuple[str, str, str]]) -> str:
         """
-        Generate SRT format content from cues
+        Generate SRT format content from cues.
 
-        Parameters:
+        Args:
             cues: List of tuples containing (start_time, end_time, text)
 
         Returns:
@@ -129,8 +135,11 @@ class VTTToSRTConverter:
         cue_index = 1
 
         for start_time, end_time, subtitle_text in cues:
-            srt_lines.append(str(cue_index))
-            srt_lines.append(f"{start_time} --> {end_time}")
+            index_line = str(cue_index)
+            srt_lines.append(index_line)
+            
+            time_line = "%s --> %s" % (start_time, end_time)
+            srt_lines.append(time_line)
 
             if subtitle_text:
                 srt_lines.append(subtitle_text)
@@ -138,13 +147,16 @@ class VTTToSRTConverter:
             srt_lines.append("")
             cue_index += 1
 
-        return "\n".join(srt_lines).rstrip() + "\n"
+        joined_lines = "\n".join(srt_lines)
+        stripped_lines = joined_lines.rstrip()
+        result = "%s\n" % stripped_lines
+        return result
 
     def convert_file(self, source_path: str, destination_path: str) -> int:
         """
-        Convert a single VTT file to SRT format
+        Convert a single VTT file to SRT format.
 
-        Parameters:
+        Args:
             source_path: Path to the source VTT file
             destination_path: Path where the SRT file will be saved
 
@@ -160,16 +172,15 @@ class VTTToSRTConverter:
         with open(destination_path, "w", encoding="utf-8") as file:
             file.write(srt_content)
 
-        self.cue_count = len(cues)
-        return len(cues)
+        cue_count = len(cues)
+        self.cue_count = cue_count
+        return cue_count
 
-    def convert_directory(
-        self, directory_path: str, output_directory: str = None
-    ) -> List[Tuple[str, int]]:
+    def convert_directory(self, directory_path: str, output_directory: Optional[str] = None) -> List[Tuple[str, int]]:
         """
-        Convert all VTT files in a directory to SRT format
+        Convert all VTT files in a directory to SRT format.
 
-        Parameters:
+        Args:
             directory_path: Directory containing VTT files
             output_directory: Directory where SRT files will be saved (optional)
 
@@ -179,25 +190,30 @@ class VTTToSRTConverter:
         if output_directory is None:
             output_directory = directory_path
 
-        Path(output_directory).mkdir(exist_ok=True)
+        output_path = Path(output_directory)
+        output_path.mkdir(exist_ok=True)
 
-        vtt_files = [
-            filename
-            for filename in os.listdir(directory_path)
-            if filename.lower().endswith(".vtt")
-        ]
+        all_files = os.listdir(directory_path)
+        vtt_files = []
+        for filename in all_files:
+            if filename.lower().endswith(".vtt"):
+                vtt_files.append(filename)
 
-        converted_files = []
+        converted_files: List[Tuple[str, int]] = []
 
         for vtt_filename in vtt_files:
-            base_name = os.path.splitext(vtt_filename)[0]
+            file_parts = os.path.splitext(vtt_filename)
+            base_name = file_parts[0]
             source_path = os.path.join(directory_path, vtt_filename)
-            destination_path = os.path.join(output_directory, f"{base_name}.en.srt")
+            destination_filename = "%s.en.srt" % base_name
+            destination_path = os.path.join(output_directory, destination_filename)
 
-            if os.path.exists(destination_path):
+            path_exists = os.path.exists(destination_path)
+            if path_exists:
                 continue
 
             cue_count = self.convert_file(source_path, destination_path)
-            converted_files.append((vtt_filename, cue_count))
+            file_info = (vtt_filename, cue_count)
+            converted_files.append(file_info)
 
         return converted_files

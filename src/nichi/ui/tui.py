@@ -44,17 +44,18 @@ class ExtendedVideoOrganizerTUI:
 
     def show_environment_variables(self):
         """Display relevant environment variables in a table format."""
+        import os
+
         from nichi.constants import (
-            ENV_GOOGLE_AI_API_KEY,
-            ENV_GEMINI_MODEL_NAME,
-            ENV_GOOGLE_AI_PROJECT_ID,
-            ENV_TRANSLATION_BATCH_SIZE,
             ENV_DEFAULT_TARGET_LANGUAGE,
-            ENV_GEMINI_MAX_RETRIES,
             ENV_GEMINI_BASE_DELAY,
             ENV_GEMINI_MAX_DELAY,
+            ENV_GEMINI_MAX_RETRIES,
+            ENV_GEMINI_MODEL_NAME,
+            ENV_GOOGLE_AI_API_KEY,
+            ENV_GOOGLE_AI_PROJECT_ID,
+            ENV_TRANSLATION_BATCH_SIZE,
         )
-        import os
 
         # Create table for environment variables
         table = Table(title="Environment Variables")

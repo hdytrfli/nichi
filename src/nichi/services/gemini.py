@@ -3,8 +3,8 @@
 import asyncio
 from typing import Callable, List, Optional, Tuple
 
+from nichi.services.cache import clear_cache, get_cache_info
 from nichi.services.core import GeminiCore
-from nichi.services.cache import get_cache_info, clear_cache
 
 
 class GeminiTranslator:

@@ -2,7 +2,7 @@
 
 import os
 import tempfile
-import shutil
+
 from nichi.core.organizer import FileOrganizer
 
 
@@ -14,7 +14,7 @@ def test_subtitle_organization_fix():
             "example.mp4",
             "example.en.srt",  # English subtitle
             "example.id.srt",  # Indonesian subtitle
-            "example.en.sdh.srt"  # English SDH subtitle
+            "example.en.sdh.srt",  # English SDH subtitle
         ]
 
         for filename in test_files:
@@ -24,17 +24,17 @@ def test_subtitle_organization_fix():
 
         # Run the organizer
         organizer = FileOrganizer()
-        result = organizer.organize_directory(temp_dir)
-        
+        organizer.organize_directory(temp_dir)
+
         # Check that a folder was created
         expected_folder = os.path.join(temp_dir, "example")
         assert os.path.exists(expected_folder), "Folder 'example' should be created"
-        
+
         # Check that all files were moved to the folder
         for filename in test_files:
             file_path = os.path.join(expected_folder, filename)
             assert os.path.exists(file_path), f"File {filename} should be moved to the folder"
-            
+
         print("Subtitle organization fix test passed!")
 
 

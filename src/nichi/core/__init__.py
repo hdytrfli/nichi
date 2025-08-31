@@ -1,7 +1,7 @@
 """Core package for the Video File Organizer application."""
 
-from .operations import Operations
 from .converter import VTTToSRTConverter
+from .operations import Operations
 from .organizer import FileOrganizer
 from .parser import SRTParser
 from .timing import SRTTimingAdjuster

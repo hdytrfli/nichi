@@ -63,7 +63,7 @@ class JellyfinParser:
             # For complex cases, we need to identify the language position
             # Language is typically the part before the last modifier
             # or second to last part if there's a modifier
-            
+
             # Check if the last part is a modifier
             last_part = parts[-1]
             if last_part in JellyfinParser.MODIFIERS:
@@ -76,7 +76,7 @@ class JellyfinParser:
                 if language_index >= 2:
                     result["track"] = parts[language_index - 1]
                     # Name is everything before track
-                    result["name"] = ".".join(parts[:language_index - 1])
+                    result["name"] = ".".join(parts[: language_index - 1])
                 else:
                     # No track, name is everything before language
                     result["name"] = ".".join(parts[:language_index])
@@ -87,10 +87,10 @@ class JellyfinParser:
                 if part_count >= 3:
                     result["track"] = parts[part_count - 2]
                     # Name is everything before track
-                    result["name"] = ".".join(parts[:part_count - 2])
+                    result["name"] = ".".join(parts[: part_count - 2])
                 else:
                     # No track, name is everything before language
-                    result["name"] = ".".join(parts[:part_count - 1])
+                    result["name"] = ".".join(parts[: part_count - 1])
 
         return result
 

@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from nichi.constants import CONFIG_DIR, CACHE_DIR
+from nichi.constants import CACHE_DIR, CONFIG_DIR
 
 
 def get_cache_directory() -> Path:

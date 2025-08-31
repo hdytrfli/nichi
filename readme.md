@@ -26,10 +26,8 @@ A TUI video file organizer with Google Gemini AI-powered translation capabilitie
 .
 ├── LICENSE
 ├── README.md
-├── requirements.txt
-├── requirements-dev.txt
 ├── pyproject.toml
-├── setup.py
+├── poetry.lock
 └── src
     ├── __init__.py
     ├── main.py
@@ -73,15 +71,12 @@ pip install nichi
 
 #### 1. Install Dependencies
 
+This project now uses Poetry for dependency management. If you don't have Poetry installed, you can install it by following the [official instructions](https://python-poetry.org/docs/#installation).
+
 ```bash
-pip install -r requirements.txt
+# Install dependencies with Poetry
+poetry install
 ```
-
-Key dependencies:
-
-- `google-generativeai>=0.5.0` - Google Gemini AI SDK
-- `python-dotenv==1.0.0` - Environment variable management
-- `rich==14.1.0` - Beautiful terminal interface
 
 #### 2. Set up Google AI API Key
 
@@ -101,11 +96,19 @@ GEMINI_MODEL_NAME=gemini-2.0-flash-exp
 #### 3. Install the Package
 
 ```bash
-# Development installation
-pip install -e .
+# Activate the Poetry shell and run the application directly
+poetry shell
+python src/main.py
 
-# Or production installation
-pip install .
+# Or run without activating the shell
+poetry run python src/main.py
+
+# To install in development mode
+poetry install
+
+# To build and install the package
+poetry build
+pip install dist/*.whl
 ```
 
 ## Usage
@@ -239,29 +242,32 @@ The project follows a clean architecture pattern:
 ### Running Tests
 
 ```bash
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Run tests
-pytest
-
-# Run linting
-flake8 src/
-
-# Run type checking
-mypy src/
+# Run tests with Poetry
+poetry run pytest
 ```
 
 ### Code Formatting
 
 ```bash
 # Format code with black
-black src/
+poetry run black src/
 
 # Sort imports with isort
-isort src/
+poetry run isort src/
 ```
 
-### Releasing
+### Managing Dependencies
 
-To release a new version of nichi, follow the instructions in [RELEASE.md](RELEASE.md).
+```bash
+# Add a new dependency
+poetry add package_name
+
+# Add a new development dependency
+poetry add --group dev package_name
+
+# Update dependencies
+poetry update
+
+# Export dependencies to requirements.txt (if needed)
+poetry export -o requirements.txt -f requirements.txt --without-hashes
+```
